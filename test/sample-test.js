@@ -29,17 +29,26 @@ describe("PMV", function () {
     const [owner, addr1, addr2, addr3] = await ethers.getSigners();
 
 
-    let elements = [await owner.getAddress(), await addr1.getAddress(), await addr2.getAddress(), await addr3.getAddress()];
-    elements = elements.map(el => Buffer.from(el, "utf-8"));
-    const merkleTree = new MerkleTree(elements, keccak256, { sortPairs: true , hashLeaves: true});
-    const root = merkleTree.getHexRoot();
+    const merkleEntries = [[await owner.getAddress(), 1],
+                           [await addr1.getAddress(), 1],
+                           [await addr2.getAddress(), 1],
+                           [await addr3.getAddress(), 1]];
 
+    const hashToken = (account, quantity) => {
+      return Buffer.from(ethers.utils.solidityKeccak256(['address', 'uint256'], [account, quantity]).slice(2), 'hex')
+    }
+
+    const merkleTree = new MerkleTree(merkleEntries.map(token => hashToken(...token)), keccak256, { sortPairs: true })
+
+    const root = merkleTree.getHexRoot();
+    console.log(root);
     const pmv = await PMV.connect(owner).deploy(root);
     await pmv.deployed();
+    console.log(await pmv.root());
 
-    const proof = merkleTree.getHexProof(keccak256(elements[0]));
+    const proof = merkleTree.getHexProof(merkleEntries.map(token => hashToken(...token))[1]);
     console.log(proof);
-    await pmv.connect(owner).mint(1, proof);
+    await pmv.connect(addr1).mint(1, proof);
 
   });
 

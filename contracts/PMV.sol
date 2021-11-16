@@ -23,7 +23,7 @@ contract PMV is ERC721Enumerable, Ownable {
      }
     
     function mint(uint256 tokenQuantity, bytes32[] calldata proof) external payable {
-        bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
+        bytes32 leaf = keccak256(abi.encodePacked(msg.sender, tokenQuantity));
         require(proof.verify(root, leaf), "NOT ON WHITELIST");
         require(totalSupply() < TOTAL_SUPPLY, "OUT_OF_STOCK");
         require(totalSupply() + tokenQuantity <= TOTAL_SUPPLY, "NOT_ENOUGH_IN_STOCK");
