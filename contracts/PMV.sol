@@ -16,10 +16,11 @@ contract PMV is ERC721Enumerable, Ownable {
     uint public constant SALE_PRICE = 0.02 ether;
     bytes32 immutable public root;
     
-    string private _tokenBaseURI = "https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/";
+    string private _tokenBaseURI;
 
-    constructor(bytes32 merkleroot) ERC721("PMV", "PMVTKN") {
+    constructor(bytes32 merkleroot, string memory uri) ERC721("PMV", "PMVTKN") {
         root = merkleroot;
+        _tokenBaseURI = uri;
      }
     
     function mint(uint256 tokenQuantity, bytes32[] calldata proof) external payable {
@@ -35,11 +36,6 @@ contract PMV is ERC721Enumerable, Ownable {
         require(_exists(tokenId), "Cannot query non-existent token");
         
         return string(abi.encodePacked(_tokenBaseURI, tokenId.toString()));
-    }
-
-    function _verify(bytes32 leaf, bytes32[] memory proof) internal view returns (bool)
-    {
-        return MerkleProof.verify(proof, root, leaf);
     }
 
 }
