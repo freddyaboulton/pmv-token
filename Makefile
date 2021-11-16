@@ -1,13 +1,11 @@
 .PHONY: install-deps
 install-deps-linux:
-	npm install ganache@alpha --global
-	pip install -r requirements.txt
-	brownie pm install OpenZeppelin/openzeppelin-contracts@4.0.0
+	npm install
 
 .PHONY: build
 build:
-	brownie compile
+	npx hardhat compile
 
 .PHONY: test
 test: build
-	brownie test
+	npx hardhat test
