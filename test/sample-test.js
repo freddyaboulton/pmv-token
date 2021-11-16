@@ -26,10 +26,10 @@ describe("PMV", function () {
   
     [owner, addr1, addr2, addr3, addr4, addr5] = await ethers.getSigners();
 
-    const merkleEntries = [[await owner.getAddress(), 1],
-                           [await addr1.getAddress(), 1],
-                           [await addr2.getAddress(), 1],
-                           [await addr3.getAddress(), 1]];
+    const merkleEntries = [[owner.address, 1],
+                           [addr1.address, 1],
+                           [addr2.address, 1],
+                           [addr3.address, 1]];
   
     validTree = new MerkleTree(merkleEntries.map(token => hashToken(...token)), keccak256, { sortPairs: true });
     const root = validTree.getHexRoot();
@@ -45,18 +45,18 @@ describe("PMV", function () {
   });
 
   it("Should let accounts on whitelist mint", async function () {
-    let proof = validTree.getHexProof(hashToken(await addr1.getAddress(), 1));
+    let proof = validTree.getHexProof(hashToken(addr1.address, 1));
     await pmv.connect(addr1).mint(1, proof);
     
-    proof = validTree.getHexProof(hashToken(await addr2.getAddress(), 1));
+    proof = validTree.getHexProof(hashToken(addr2.address, 1));
     await pmv.connect(addr2).mint(1, proof);
-    expect(await pmv.balanceOf(await addr1.getAddress())).to.equal(1);
-    expect(await pmv.balanceOf(await addr2.getAddress())).to.equal(1);
+    expect(await pmv.balanceOf(addr1.address)).to.equal(1);
+    expect(await pmv.balanceOf(addr2.address)).to.equal(1);
   });
 
   it("Should not let accounts not on whitelist mint", async function () {
     try {
-      let proof = validTree.getHexProof(hashToken(await addr5.getAddress(), 1));
+      let proof = validTree.getHexProof(hashToken(addr5.address, 1));
       pmv.connect(addr5).mint(1, proof)
       expect(false).to.be.true
   }
@@ -67,7 +67,7 @@ describe("PMV", function () {
 
   it("Should not let those on whitelist mint more or less than allowed", async function () {
     try {
-      let proof = validTree.getHexProof(hashToken(await addr1.getAddress(), 2));
+      let proof = validTree.getHexProof(hashToken(addr1.address, 2));
       await pmv.connect(addr1).mint(2, proof)
       expect(false).to.be.true
   }
@@ -76,7 +76,7 @@ describe("PMV", function () {
   }
 
   try {
-    let proof = validTree.getHexProof(hashToken(await addr2.getAddress(), 0));
+    let proof = validTree.getHexProof(hashToken(addr2.address, 0));
     await pmv.connect(addr2).mint(0, proof)
     expect(false).to.be.true
 }
