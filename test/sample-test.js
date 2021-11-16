@@ -50,6 +50,8 @@ describe("PMV", function () {
     
     proof = validTree.getHexProof(hashToken(await addr2.getAddress(), 1));
     await pmv.connect(addr2).mint(1, proof);
+    expect(await pmv.balanceOf(await addr1.getAddress())).to.equal(1);
+    expect(await pmv.balanceOf(await addr2.getAddress())).to.equal(1);
   });
 
   it("Should not let accounts not on whitelist mint", async function () {
