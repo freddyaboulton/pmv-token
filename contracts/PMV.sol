@@ -30,9 +30,11 @@ contract PMV is ERC721Enumerable, Ownable {
         require(proof.verify(root, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON WHITELIST");
         require(presaleMints[msg.sender] + tokenQuantity <= allowance, "MINTING MORE THAN ALLOWED");
         require(tokenQuantity * SALE_PRICE == msg.value, "INCORRECT PAYMENT AMOUNT");
+        
         for(uint256 i = 0; i < tokenQuantity; i++) {
             _safeMint(msg.sender, totalSupply() + 1);
         }  
+        
         presaleMints[msg.sender] += tokenQuantity;      
     }
     
