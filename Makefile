@@ -9,3 +9,7 @@ build:
 .PHONY: test
 test: build
 	npx hardhat test
+
+.PHONY: lint
+lint: 
+	npx eslint test
