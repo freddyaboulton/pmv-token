@@ -12,7 +12,7 @@ contract PMV is ERC721Enumerable, Ownable {
     using Strings for uint256;
     using MerkleProof for bytes32[];
 
-    uint256 public constant TOTAL_SUPPLY = 10;
+    uint256 public constant maxSupply = 10;
     uint public constant SALE_PRICE = 0.02 ether;
     bytes32 immutable public root;
     
