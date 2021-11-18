@@ -1,4 +1,4 @@
-name: Build and test
+name: Pre-merge checks
 
 on:
   pull_request:
