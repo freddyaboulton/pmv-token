@@ -59,7 +59,7 @@ describe('PMV', function() {
             });
             expect(false).to.be.true;
           } catch (error) {
-            expect(true).to.be.true;
+            expect(error.message).to.contain('PRESALE NOT ACTIVE');
           }
         });
 
