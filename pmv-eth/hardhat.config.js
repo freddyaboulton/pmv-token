@@ -26,4 +26,10 @@ module.exports = {
     currency: 'USD',
     coinmarketcap: process.env.COINMARKETCAP_KEY,
   },
+  networks: {
+      rinkeby: {
+        url: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+        accounts: [`0x${process.env.DEPLOYER_PRIVATE_KEY}`]
+      }
+    },
 };
