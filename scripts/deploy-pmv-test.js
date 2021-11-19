@@ -35,14 +35,8 @@ async function main() {
 
   const [deployer] = await ethers.getSigners();
 
-
-  const merkleEntries = [['0xE4763c199bdD01aa01c5dc4e9524c63F307e9021', 2],
-    ['0x7b1C4134a8682dbee5AF7993DEc9745e11263E8f', 3],
-    ['0x537a638751D3602c0fd0843272E958C78aAc2D8B', 3],
-    ['0x9De6405C0C7512ee94BCB79B860668a52aa7FAd2', 1],
-    [deployer.address, 1]];
-
-
+  // Construct merkle tree here
+  
   const hashes = merkleEntries.map((token) => hashToken(...token));
   validTree = new MerkleTree(hashes, keccak256, {sortPairs: true});
   const root = validTree.getHexRoot();
