@@ -41,7 +41,7 @@ describe('PMV', function() {
     const hashes = merkleEntries.map((token) => hashToken(...token));
     validTree = new MerkleTree(hashes, keccak256, {sortPairs: true});
     const root = validTree.getHexRoot();
-    pmv = await PMV.connect(owner).deploy(root, 'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/');
+    pmv = await PMV.connect(owner).deploy(root, 'https://not-real-uri.com/');
     await pmv.deployed();
   });
 
@@ -72,22 +72,51 @@ describe('PMV', function() {
       }
     });
 
-    it('Should let accounts on whitelist mint', async function() {
-      await pmv.connect(owner).setPresale(true);
-      let proof = validTree.getHexProof(hashToken(addr1.address, 2));
-      await pmv.connect(addr1).mintPresale(2, proof, 2, {
-        value: ethers.BigNumber.from('40000000000000000'),
-      });
-
-      proof = validTree.getHexProof(hashToken(addr2.address, 2));
-      await pmv.connect(addr2).mintPresale(2, proof, 1, {
-        value: ethers.BigNumber.from('20000000000000000'),
-      });
-      expect(await pmv.balanceOf(addr1.address)).to.equal(2);
-      expect(await pmv.balanceOf(addr2.address)).to.equal(1);
-      amount = await pmv.provider.getBalance(pmv.address);
-      expect(amount).to.equal('60000000000000000');
+    it('Should not let non-owners set URI status', async function() {
+      try {
+        await pmv.connect(addr1).setURIStatus(true, 'https://malicious-domain.org');
+        expect(false).to.be.true;
+      } catch (error) {
+        expect(error.message).to.contain('caller is not the owner');
+      }
     });
+
+    it('Should let owner set URI status', async function() {
+      await pmv.connect(owner).setURIStatus(true, 'https://the-real-doman.org');
+    });
+
+    it('Should not let owners set URI to empty string', async function() {
+      try {
+        await pmv.connect(owner).setURIStatus(true, '');
+        expect(false).to.be.true;
+      } catch (error) {
+        expect(error.message).to.contain('_tokenBaseURI is empty');
+      }
+    });
+
+
+    it('Should let accounts on whitelist mint and not reveal metadata',
+        async function() {
+          await pmv.connect(owner).setPresale(true);
+          let proof = validTree.getHexProof(hashToken(addr1.address, 2));
+          await pmv.connect(addr1).mintPresale(2, proof, 2, {
+            value: ethers.BigNumber.from('40000000000000000'),
+          });
+
+          proof = validTree.getHexProof(hashToken(addr2.address, 2));
+          await pmv.connect(addr2).mintPresale(2, proof, 1, {
+            value: ethers.BigNumber.from('20000000000000000'),
+          });
+          expect(await pmv.balanceOf(addr1.address)).to.equal(2);
+          expect(await pmv.balanceOf(addr2.address)).to.equal(1);
+          amount = await pmv.provider.getBalance(pmv.address);
+          expect(amount).to.equal('60000000000000000');
+
+          // Check the metadata is not revealed yet
+          for (let i = 1; i < 4; i++) {
+            expect(await pmv.tokenURI(i)).to.equal('https://not-real-uri.com/');
+          }
+        });
 
     it('Should let whitelisted users mint allowance in multiple transactions',
         async function() {
@@ -100,6 +129,23 @@ describe('PMV', function() {
             value: ethers.BigNumber.from('20000000000000000'),
           });
           expect(await pmv.balanceOf(addr3.address)).to.equal(3);
+        });
+
+    it('Should show right metadata after reveal',
+        async function() {
+          await pmv.connect(owner).setPresale(true);
+          const proof = validTree.getHexProof(hashToken(addr3.address, 3));
+          await pmv.connect(addr3).mintPresale(3, proof, 2, {
+            value: ethers.BigNumber.from('40000000000000000'),
+          });
+          await pmv.connect(addr3).mintPresale(3, proof, 1, {
+            value: ethers.BigNumber.from('20000000000000000'),
+          });
+          expect(await pmv.balanceOf(addr3.address)).to.equal(3);
+          await pmv.connect(owner).setURIStatus(true, 'https://the-real-doman.org/');
+          for (let i = 1; i < 4; i++) {
+            expect(await pmv.tokenURI(i)).to.equal(`https://the-real-doman.org/${i}`);
+          }
         });
 
     it('Should not let accounts not on whitelist mint', async function() {
