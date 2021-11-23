@@ -24,13 +24,16 @@ describe('PMV', function() {
   let addr2;
   let addr3;
   let addr5;
+  let addr6;
+  let addr7;
   let validTree;
 
 
   beforeEach(async function() {
     const PMV = await ethers.getContractFactory('PMV');
 
-    [owner, addr1, addr2, addr3, addr5] = await ethers.getSigners();
+    [owner, addr1, addr2, addr3,
+      addr5, addr6, addr7] = await ethers.getSigners();
 
     const merkleEntries = [[owner.address, 2],
       [addr1.address, 2],
@@ -47,7 +50,7 @@ describe('PMV', function() {
 
   describe('Whitelist tests', function() {
     it('Should return the total supply', async function() {
-      expect(await pmv.maxSupply()).to.equal(10);
+      expect(await pmv.maxSupply()).to.equal(30);
     });
 
     it('Should not let users mintPresale when presale is not active',
@@ -63,9 +66,53 @@ describe('PMV', function() {
           }
         });
 
+    it('Should not let users mint when sale not active',
+        async function() {
+          try {
+            await pmv.connect(addr1).mint(2, {
+              value: ethers.BigNumber.from('20000000000000000'),
+            });
+          } catch (error) {
+            expect(error.message).to.contain('SALE NOT ACTIVE');
+          }
+        });
+
+    it('Should not let users mint when sale and presale active',
+        async function() {
+          pmv.connect(owner).setPresale(true);
+          pmv.connect(owner).setSale(true);
+          try {
+            await pmv.connect(addr1).mint(2, {
+              value: ethers.BigNumber.from('20000000000000000'),
+            });
+            expect(false).to.be.true;
+          } catch (error) {
+            expect(error.message).to.contain('PRESALE ONLY RIGHT NOW');
+          }
+          try {
+            const proof = validTree.getHexProof(hashToken(addr1.address, 1));
+            await pmv.connect(addr1).mintPresale(2, proof, 1, {
+              value: ethers.BigNumber.from('20000000000000000'),
+            });
+            expect(false).to.be.true;
+          } catch (error) {
+            expect(error.message).to.contain('SALE ACTIVE RIGHT NOW');
+          }
+        });
+
+
     it('Should not let non-owners change the presale satus', async function() {
       try {
         await pmv.connect(addr1).setPresale(false);
+        expect(false).to.be.true;
+      } catch (error) {
+        expect(error.message).to.contain('caller is not the owner');
+      }
+    });
+
+    it('Should not let non-owners change the presale satus', async function() {
+      try {
+        await pmv.connect(addr2).setSale(true);
         expect(false).to.be.true;
       } catch (error) {
         expect(error.message).to.contain('caller is not the owner');
@@ -93,7 +140,6 @@ describe('PMV', function() {
         expect(error.message).to.contain('_tokenBaseURI is empty');
       }
     });
-
 
     it('Should let accounts on whitelist mint and not reveal metadata',
         async function() {
@@ -197,6 +243,156 @@ describe('PMV', function() {
             expect(false).to.be.true;
           } catch (error) {
             expect(error.message).to.contain('MINTING MORE THAN ALLOWED');
+          }
+        });
+
+    it('Should not let users mint if they do not send enough eth',
+        async function() {
+          await pmv.connect(owner).setSale(true);
+          try {
+            await pmv.connect(addr6).mint(5, {
+              value: ethers.BigNumber.from('80000000000000000'),
+            });
+            expect(false).to.be(true);
+          } catch (error) {
+            expect(error.message).to.contain('INCORRECT PAYMENT AMOUNT');
+          }
+        });
+
+    it('Should let users mint after presale and not reveal metadata',
+        async function() {
+          await pmv.connect(owner).setSale(true);
+
+          await pmv.connect(addr6).mint(5, {
+            value: ethers.BigNumber.from('100000000000000000'),
+          });
+          expect(await pmv.balanceOf(addr6.address)).to.equal(5);
+
+          for (let i = 1; i < 6; i++) {
+            expect(await pmv.tokenURI(i)).to.equal('https://not-real-uri.com/');
+          }
+        });
+
+    it('Should not let users mint more than maxSupply',
+        async function() {
+          await pmv.connect(owner).setSale(true);
+
+          await pmv.connect(addr7).mint(10, {
+            value: ethers.BigNumber.from('200000000000000000'),
+          });
+          expect(await pmv.balanceOf(addr7.address)).to.equal(10);
+
+          await pmv.connect(addr1).mint(10, {
+            value: ethers.BigNumber.from('200000000000000000'),
+          });
+          expect(await pmv.balanceOf(addr1.address)).to.equal(10);
+
+          await pmv.connect(addr2).mint(7, {
+            value: ethers.BigNumber.from('140000000000000000'),
+          });
+          expect(await pmv.balanceOf(addr2.address)).to.equal(7);
+
+          try {
+            await pmv.connect(addr6).mint(5, {
+              value: ethers.BigNumber.from('100000000000000000'),
+            });
+            expect(false).to.be.true;
+          } catch (error) {
+            expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
+          }
+
+          await pmv.connect(owner).mint(2, {
+            value: ethers.BigNumber.from('40000000000000000'),
+          });
+          expect(await pmv.balanceOf(owner.address)).to.equal(2);
+
+          try {
+            await pmv.connect(addr5).mint(2, {
+              value: ethers.BigNumber.from('40000000000000000'),
+            });
+            expect(false).to.be.true;
+          } catch (error) {
+            expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
+          }
+
+          await pmv.connect(addr3).mint(1, {
+            value: ethers.BigNumber.from('20000000000000000'),
+          });
+          expect(await pmv.balanceOf(addr3.address)).to.equal(1);
+
+          maxSupply = await pmv.connect(owner).maxSupply();
+          for (let i = 1; i < maxSupply; i++) {
+            expect(await pmv.tokenURI(i)).to.equal('https://not-real-uri.com/');
+          }
+
+          await pmv.connect(owner).setURIStatus(true, 'https://the-real-doman.org/');
+          for (let i = 1; i < maxSupply; i++) {
+            expect(await pmv.tokenURI(i)).to.equal(`https://the-real-doman.org/${i}`);
+          }
+        });
+
+    it('Should not let users mint more than maxPerWallet',
+        async function() {
+          await pmv.connect(owner).setSale(true);
+
+          try {
+            await pmv.connect(addr2).mint(12, {
+              value: ethers.BigNumber.from('240000000000000000'),
+            });
+            expect(false).to.be.true;
+          } catch (error) {
+            expect(error.message).to.contain('MINTING MORE THAN ALLOWED');
+          }
+
+          await pmv.connect(addr2).mint(7, {
+            value: ethers.BigNumber.from('140000000000000000'),
+          });
+          expect(await pmv.balanceOf(addr2.address)).to.equal(7);
+
+          try {
+            await pmv.connect(addr2).mint(5, {
+              value: ethers.BigNumber.from('100000000000000000'),
+            });
+            expect(false).to.equal(true);
+          } catch (error) {
+            expect(error.message).to.contain('MINTING MORE THAN ALLOWED');
+          }
+
+          await pmv.connect(addr2).mint(3, {
+            value: ethers.BigNumber.from('60000000000000000'),
+          });
+          expect(await pmv.balanceOf(addr2.address)).to.equal(10);
+        });
+
+    it('Should not let maxPerWallet interfere with presale amount minted',
+        async function() {
+          await pmv.connect(owner).setPresale(true);
+          const proof = validTree.getHexProof(hashToken(addr3.address, 3));
+          await pmv.connect(addr3).mintPresale(3, proof, 3, {
+            value: ethers.BigNumber.from('60000000000000000'),
+          });
+          expect(await pmv.balanceOf(addr3.address)).to.equal(3);
+          await pmv.connect(owner).setSale(true);
+          await pmv.connect(owner).setPresale(false);
+
+          await pmv.connect(addr3).mint(10, {
+            value: ethers.BigNumber.from('200000000000000000'),
+          });
+
+          expect(await pmv.balanceOf(addr3.address)).to.equal(13);
+        });
+
+    it('Should let users mint after presale and not reveal metadata',
+        async function() {
+          await pmv.connect(owner).setSale(true);
+
+          await pmv.connect(addr6).mint(5, {
+            value: ethers.BigNumber.from('100000000000000000'),
+          });
+          expect(await pmv.balanceOf(addr6.address)).to.equal(5);
+
+          for (let i = 1; i < 6; i++) {
+            expect(await pmv.tokenURI(i)).to.equal('https://not-real-uri.com/');
           }
         });
   });
