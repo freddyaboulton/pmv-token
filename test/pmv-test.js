@@ -110,7 +110,7 @@ describe('PMV', function() {
       }
     });
 
-    it('Should not let non-owners change the presale satus', async function() {
+    it('Should not let non-owners change the sale satus', async function() {
       try {
         await pmv.connect(addr2).setSale(true);
         expect(false).to.be.true;
