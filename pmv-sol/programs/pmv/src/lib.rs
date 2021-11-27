@@ -1,110 +1,96 @@
-//! Program for distributing tokens efficiently via uploading a Merkle root.
+pub mod utils;
 
-use anchor_lang::prelude::*;
-use anchor_lang::solana_program::program::invoke_signed;
-use anchor_spl::token::{self, Mint, Token, TokenAccount};
-use metaplex_token_metadata::instruction::create_metadata_accounts;
-use vipers::{assert_ata, assert_owner, unwrap_int};
+use {
+    crate::utils::{assert_initialized, assert_owned_by, spl_token_transfer, TokenTransferParams},
+    anchor_lang::{
+        prelude::*, solana_program::system_program, AnchorDeserialize, AnchorSerialize,
+        Discriminator, Key,
+    },
+    anchor_spl::token::Token,
+    metaplex_token_metadata::{
+        instruction::{create_master_edition, create_metadata_accounts, update_metadata_accounts},
+        state::{MAX_CREATOR_LEN, MAX_CREATOR_LIMIT, MAX_SYMBOL_LENGTH},
+    },
+    spl_token::state::Mint,
+};
+anchor_lang::declare_id!("cndyAnrLdpjq1Ssp1z8xxDsB8dxe7u4HL5Nxi2K5WXZ");
 
-pub mod merkle_proof;
-
-declare_id!("MRKGLMizK9XSTaD1d1jbVkdHZbQVCSnPpYiTw9aKQv8");
-
-/// The [merkle_distributor] program.
+const PREFIX: &str = "candy_machine";
 #[program]
-pub mod merkle_distributor {
+pub mod nft_candy_machine {
+    use anchor_lang::solana_program::{
+        program::{invoke, invoke_signed},
+        system_instruction,
+    };
+
     use super::*;
 
-    /// Creates a new [MerkleDistributor].
-    /// After creating this [MerkleDistributor], the account should be seeded with tokens via its ATA.
-    pub fn new_distributor(
-        ctx: Context<NewDistributor>,
-        bump: u8,
-        root: [u8; 32],
-        max_total_claim: u64,
-        max_num_nodes: u64,
-    ) -> ProgramResult {
-        let distributor = &mut ctx.accounts.distributor;
+    pub fn mint_nft<'info>(ctx: Context<'_, '_, '_, 'info, MintNFT<'info>>) -> ProgramResult {
+        let candy_machine = &mut ctx.accounts.candy_machine;
+        let config = &ctx.accounts.config;
+        //let claim_status = &mut ctx.accounts.claim_status;
 
-        distributor.base = ctx.accounts.base.key();
-        distributor.bump = bump;
+        if let Some(mint) = candy_machine.token_mint {
+            let token_account_info = &ctx.remaining_accounts[0];
+            let transfer_authority_info = &ctx.remaining_accounts[1];
+            let token_account: spl_token::state::Account = assert_initialized(&token_account_info)?;
 
-        distributor.root = root;
-        distributor.mint = ctx.accounts.mint.key();
+            assert_owned_by(&token_account_info, &spl_token::id())?;
 
-        distributor.max_total_claim = max_total_claim;
-        distributor.max_num_nodes = max_num_nodes;
-        distributor.total_amount_claimed = 0;
-        distributor.num_nodes_claimed = 0;
+            if token_account.mint != mint {
+                return Err(ErrorCode::MintMismatch.into());
+            }
 
-        Ok(())
-    }
+            if token_account.amount < candy_machine.data.price {
+                return Err(ErrorCode::NotEnoughTokens.into());
+            }
 
-    /// Claims tokens from the [MerkleDistributor].
-    pub fn claim(
-        ctx: Context<Claim>,
-        _bump: u8,
-        index: u64,
-        amount: u64,
-        proof: Vec<[u8; 32]>,
-    ) -> ProgramResult {
-        let claim_status = &mut ctx.accounts.claim_status;
-        assert_owner!(claim_status.to_account_info(), ID);
-        require!(
-            // This check is redudant, we should not be able to initialize a claim status account at the same key.
-            !claim_status.is_claimed && claim_status.claimed_at == 0,
-            DropAlreadyClaimed
-        );
+            spl_token_transfer(TokenTransferParams {
+                source: token_account_info.clone(),
+                destination: ctx.accounts.wallet.to_account_info(),
+                authority: transfer_authority_info.clone(),
+                authority_signer_seeds: &[],
+                token_program: ctx.accounts.token_program.to_account_info(),
+                amount: candy_machine.data.price,
+            })?;
+        } else {
+            if ctx.accounts.payer.lamports() < candy_machine.data.price {
+                return Err(ErrorCode::NotEnoughSOL.into());
+            }
 
-        let claimant_account = &ctx.accounts.claimant;
-        let distributor = &ctx.accounts.distributor;
-        require!(claimant_account.is_signer, Unauthorized);
+            invoke(
+                &system_instruction::transfer(
+                    &ctx.accounts.payer.key,
+                    ctx.accounts.wallet.key,
+                    candy_machine.data.price,
+                ),
+                &[
+                    ctx.accounts.payer.to_account_info(),
+                    ctx.accounts.wallet.to_account_info(),
+                    ctx.accounts.system_program.to_account_info(),
+                ],
+            )?;
+        }
 
-        // Verify the merkle proof.
-        let node = anchor_lang::solana_program::keccak::hashv(&[
-            &index.to_le_bytes(),
-            &claimant_account.key().to_bytes(),
-            &amount.to_le_bytes(),
-        ]);
-        require!(
-            merkle_proof::verify(proof, distributor.root, node.0),
-            InvalidProof
-        );
+        candy_machine.items_redeemed = candy_machine
+            .items_redeemed
+            .checked_add(1)
+            .ok_or(ErrorCode::NumericalOverflowError)?;
 
-        // Mark it claimed and send the tokens.
-        claim_status.amount = amount;
-        claim_status.is_claimed = true;
-        let clock = Clock::get()?;
-        claim_status.claimed_at = clock.unix_timestamp;
-        claim_status.claimant = claimant_account.key();
-
-        let seeds = [
-            b"MerkleDistributor".as_ref(),
-            &distributor.base.to_bytes(),
-            &[ctx.accounts.distributor.bump],
+        let config_key = config.key();
+        let authority_seeds = [
+            PREFIX.as_bytes(),
+            config_key.as_ref(),
+            candy_machine.data.uuid.as_bytes(),
+            &[candy_machine.bump],
         ];
 
-        assert_ata!(
-            ctx.accounts.from,
-            ctx.accounts.distributor,
-            distributor.mint
-        );
-        require!(
-            ctx.accounts.to.owner == claimant_account.key(),
-            OwnerMismatch
-        );
-        token::transfer(
-            CpiContext::new(
-                ctx.accounts.token_program.to_account_info(),
-                token::Transfer {
-                    from: ctx.accounts.from.to_account_info(),
-                    to: ctx.accounts.to.to_account_info(),
-                    authority: ctx.accounts.distributor.to_account_info(),
-                },
-            )
-            .with_signer(&[&seeds[..]]),
-            1,
-        )?;
+        let creators: Vec<metaplex_token_metadata::state::Creator> =
+            vec![metaplex_token_metadata::state::Creator {
+                address: candy_machine.key(),
+                verified: true,
+                share: 0,
+            }];
 
         let metadata_infos = vec![
             ctx.accounts.metadata.to_account_info(),
@@ -115,7 +101,20 @@ pub mod merkle_distributor {
             ctx.accounts.token_program.to_account_info(),
             ctx.accounts.system_program.to_account_info(),
             ctx.accounts.rent.to_account_info(),
-            distributor.to_account_info(),
+            candy_machine.to_account_info(),
+        ];
+
+        let master_edition_infos = vec![
+            ctx.accounts.master_edition.to_account_info(),
+            ctx.accounts.mint.to_account_info(),
+            ctx.accounts.mint_authority.to_account_info(),
+            ctx.accounts.payer.to_account_info(),
+            ctx.accounts.metadata.to_account_info(),
+            ctx.accounts.token_metadata_program.to_account_info(),
+            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+            ctx.accounts.rent.to_account_info(),
+            candy_machine.to_account_info(),
         ];
 
         invoke_signed(
@@ -125,185 +124,324 @@ pub mod merkle_distributor {
                 *ctx.accounts.mint.key,
                 *ctx.accounts.mint_authority.key,
                 *ctx.accounts.payer.key,
-                distributor.base,
-                "PMV".to_string(),
-                "PMVTKN".to_string(),
-                format!(
-                    "https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/{}",
-                    amount
-                ),
-                None,
+                candy_machine.key(),
+                format!("{}{}", config.data.symbol, 1),
+                config.data.symbol.clone(),
+                format!("{}{}", config.data.uri, 1),
+                Some(creators),
                 0,
                 true,
-                false,
+                config.data.is_mutable,
             ),
             metadata_infos.as_slice(),
-            &[&seeds],
+            &[&authority_seeds],
         )?;
 
-        let distributor = &mut ctx.accounts.distributor;
-        distributor.total_amount_claimed =
-            unwrap_int!(distributor.total_amount_claimed.checked_add(1));
-        require!(
-            distributor.total_amount_claimed <= distributor.max_total_claim,
-            ExceededMaxClaim
-        );
-        distributor.num_nodes_claimed = unwrap_int!(distributor.num_nodes_claimed.checked_add(1));
-        require!(
-            distributor.num_nodes_claimed <= distributor.max_num_nodes,
-            ExceededMaxNumNodes
-        );
+        invoke_signed(
+            &create_master_edition(
+                *ctx.accounts.token_metadata_program.key,
+                *ctx.accounts.master_edition.key,
+                *ctx.accounts.mint.key,
+                candy_machine.key(),
+                *ctx.accounts.mint_authority.key,
+                *ctx.accounts.metadata.key,
+                *ctx.accounts.payer.key,
+                //max supply
+                Some(1),
+            ),
+            master_edition_infos.as_slice(),
+            &[&authority_seeds],
+        )?;
 
-        emit!(ClaimedEvent {
-            index,
-            claimant: claimant_account.key(),
-            amount
-        });
+        let mut new_update_authority = Some(candy_machine.authority);
+
+        if !ctx.accounts.config.data.retain_authority {
+            new_update_authority = Some(ctx.accounts.update_authority.key());
+        }
+
+        invoke_signed(
+            &update_metadata_accounts(
+                *ctx.accounts.token_metadata_program.key,
+                *ctx.accounts.metadata.key,
+                candy_machine.key(),
+                new_update_authority,
+                None,
+                Some(true),
+            ),
+            &[
+                ctx.accounts.token_metadata_program.to_account_info(),
+                ctx.accounts.metadata.to_account_info(),
+                candy_machine.to_account_info(),
+            ],
+            &[&authority_seeds],
+        )?;
+
+        //claim_status.is_claimed = true;
+
+        Ok(())
+    }
+
+    pub fn initialize_config(ctx: Context<InitializeConfig>, data: ConfigData) -> ProgramResult {
+        let config_info = &mut ctx.accounts.config;
+        if data.uuid.len() != 6 {
+            return Err(ErrorCode::UuidMustBeExactly6Length.into());
+        }
+
+        let mut config = Config {
+            data,
+            authority: *ctx.accounts.authority.key,
+        };
+
+        let mut array_of_zeroes = vec![];
+        while array_of_zeroes.len() < MAX_SYMBOL_LENGTH - config.data.symbol.len() {
+            array_of_zeroes.push(0u8);
+        }
+        let new_symbol =
+            config.data.symbol.clone() + std::str::from_utf8(&array_of_zeroes).unwrap();
+        config.data.symbol = new_symbol;
+
+        let mut new_data = Config::discriminator().try_to_vec().unwrap();
+        new_data.append(&mut config.try_to_vec().unwrap());
+        let mut data = config_info.data.borrow_mut();
+        // god forgive me couldnt think of better way to deal with this
+        for i in 0..new_data.len() {
+            data[i] = new_data[i];
+        }
+
+        Ok(())
+    }
+
+    pub fn initialize_candy_machine(
+        ctx: Context<InitializeCandyMachine>,
+        bump: u8,
+        data: CandyMachineData,
+    ) -> ProgramResult {
+        let candy_machine = &mut ctx.accounts.candy_machine;
+
+        if data.uuid.len() != 6 {
+            return Err(ErrorCode::UuidMustBeExactly6Length.into());
+        }
+        candy_machine.data = data;
+        candy_machine.wallet = *ctx.accounts.wallet.key;
+        candy_machine.authority = *ctx.accounts.authority.key;
+        candy_machine.config = ctx.accounts.config.key();
+        candy_machine.bump = bump;
+        if ctx.remaining_accounts.len() > 0 {
+            let token_mint_info = &ctx.remaining_accounts[0];
+            let _token_mint: Mint = assert_initialized(&token_mint_info)?;
+            let token_account: spl_token::state::Account =
+                assert_initialized(&ctx.accounts.wallet)?;
+
+            assert_owned_by(&token_mint_info, &spl_token::id())?;
+            assert_owned_by(&ctx.accounts.wallet, &spl_token::id())?;
+
+            if token_account.mint != *token_mint_info.key {
+                return Err(ErrorCode::MintMismatch.into());
+            }
+
+            candy_machine.token_mint = Some(*token_mint_info.key);
+        }
+
+        Ok(())
+    }
+
+    pub fn update_authority(
+        ctx: Context<UpdateCandyMachine>,
+        new_authority: Option<Pubkey>,
+    ) -> ProgramResult {
+        let candy_machine = &mut ctx.accounts.candy_machine;
+
+        if let Some(new_auth) = new_authority {
+            candy_machine.authority = new_auth;
+        }
+
+        Ok(())
+    }
+
+    pub fn withdraw_funds<'info>(ctx: Context<WithdrawFunds<'info>>) -> ProgramResult {
+        let authority = &ctx.accounts.authority;
+        let pay = &ctx.accounts.config.to_account_info();
+        let snapshot: u64 = pay.lamports();
+
+        **pay.lamports.borrow_mut() = 0;
+
+        **authority.lamports.borrow_mut() = authority
+            .lamports()
+            .checked_add(snapshot)
+            .ok_or(ErrorCode::NumericalOverflowError)?;
+
         Ok(())
     }
 }
 
-/// Accounts for [merkle_distributor::new_distributor].
 #[derive(Accounts)]
-#[instruction(bump: u8)]
-pub struct NewDistributor<'info> {
-    /// Base key of the distributor.
-    pub base: Signer<'info>,
-
-    /// [MerkleDistributor].
-    #[account(
-        init,
-        seeds = [
-            b"MerkleDistributor".as_ref(),
-            base.key().to_bytes().as_ref()
-        ],
-        bump = bump,
-        payer = payer
-    )]
-    pub distributor: Account<'info, MerkleDistributor>,
-
-    /// The mint to distribute.
-    pub mint: Account<'info, Mint>,
-
-    /// Payer to create the distributor.
-    pub payer: Signer<'info>,
-
-    /// The [System] program.
-    pub system_program: Program<'info, System>,
+#[instruction(bump: u8, data: CandyMachineData)]
+pub struct InitializeCandyMachine<'info> {
+    #[account(init, seeds=[PREFIX.as_bytes(), config.key().as_ref(), data.uuid.as_bytes()], payer=payer, bump=bump, space=8+32+32+33+32+64+64+64+200)]
+    candy_machine: ProgramAccount<'info, CandyMachine>,
+    #[account(constraint= wallet.owner == &spl_token::id() || (wallet.data_is_empty() && wallet.lamports() > 0) )]
+    wallet: AccountInfo<'info>,
+    #[account(has_one=authority)]
+    config: ProgramAccount<'info, Config>,
+    #[account(signer, constraint= authority.data_is_empty() && authority.lamports() > 0)]
+    authority: AccountInfo<'info>,
+    #[account(mut, signer)]
+    payer: AccountInfo<'info>,
+    #[account(address = system_program::ID)]
+    system_program: AccountInfo<'info>,
+    rent: Sysvar<'info, Rent>,
 }
 
-/// [merkle_distributor::claim] accounts.
 #[derive(Accounts)]
-#[instruction(_bump: u8, index: u64)]
-pub struct Claim<'info> {
-    /// The [MerkleDistributor].
-    #[account(mut)]
-    pub distributor: Account<'info, MerkleDistributor>,
+#[instruction(data: ConfigData)]
+pub struct InitializeConfig<'info> {
+    #[account(mut, constraint= config.to_account_info().owner == program_id && config.to_account_info().data_len() >= CONFIG_ARRAY_START+4 + 4)]
+    config: AccountInfo<'info>,
+    #[account(constraint= authority.data_is_empty() && authority.lamports() > 0 )]
+    authority: AccountInfo<'info>,
+    #[account(mut, signer)]
+    payer: AccountInfo<'info>,
+    rent: Sysvar<'info, Rent>,
+}
 
-    /// Status of the claim.
+#[derive(Accounts)]
+pub struct WithdrawFunds<'info> {
+    #[account(mut, has_one = authority)]
+    config: Account<'info, Config>,
+    #[account(signer, address = config.authority)]
+    authority: AccountInfo<'info>,
+}
+#[derive(Accounts)]
+#[instruction(_bump: u8, token_index: u64)]
+pub struct MintNFT<'info> {
+    config: Account<'info, Config>,
     #[account(
-        init,
-        seeds = [
-            b"ClaimStatus".as_ref(),
-            index.to_le_bytes().as_ref(),
-            distributor.key().to_bytes().as_ref()
-        ],
-        bump = _bump,
-        payer = payer
+        mut,
+        has_one = config,
+        has_one = wallet,
+        seeds = [PREFIX.as_bytes(), config.key().as_ref(), candy_machine.data.uuid.as_bytes()],
+        bump = candy_machine.bump,
     )]
-    pub claim_status: Account<'info, ClaimStatus>,
-
-    /// Distributor ATA containing the tokens to distribute.
+    candy_machine: Account<'info, CandyMachine>,
     #[account(mut)]
-    pub from: Account<'info, TokenAccount>,
-
-    /// Account to send the claimed tokens to.
+    payer: Signer<'info>,
     #[account(mut)]
-    pub to: Account<'info, TokenAccount>,
-
-    #[account(address = metaplex_token_metadata::id())]
-    token_metadata_program: UncheckedAccount<'info>,
+    wallet: UncheckedAccount<'info>,
+    // With the following accounts we aren't using anchor macros because they are CPI'd
+    // through to token-metadata which will do all the validations we need on them.
     #[account(mut)]
     metadata: UncheckedAccount<'info>,
     #[account(mut)]
     mint: UncheckedAccount<'info>,
     mint_authority: Signer<'info>,
+    update_authority: Signer<'info>,
+    #[account(mut)]
+    master_edition: UncheckedAccount<'info>,
+    #[account(address = metaplex_token_metadata::id())]
+    token_metadata_program: UncheckedAccount<'info>,
+    token_program: Program<'info, Token>,
+    system_program: Program<'info, System>,
     rent: Sysvar<'info, Rent>,
-
-    /// Who is claiming the tokens.
-    pub claimant: Signer<'info>,
-
-    /// Payer of the claim.
-    pub payer: Signer<'info>,
-
-    /// The [System] program.
-    pub system_program: Program<'info, System>,
-
-    /// SPL [Token] program.
-    pub token_program: Program<'info, Token>,
+    clock: Sysvar<'info, Clock>,
 }
 
-/// State for the account which distributes tokens.
+#[derive(Accounts)]
+pub struct UpdateCandyMachine<'info> {
+    #[account(
+        mut,
+        has_one = authority,
+        seeds = [PREFIX.as_bytes(), candy_machine.config.key().as_ref(), candy_machine.data.uuid.as_bytes()],
+        bump = candy_machine.bump
+    )]
+    candy_machine: ProgramAccount<'info, CandyMachine>,
+    #[account(signer)]
+    authority: AccountInfo<'info>,
+}
+
+// #[account]
+// #[derive(Default)]
+// pub struct ClaimStatus {
+//     /// If true, the tokens have been claimed.
+//     pub is_claimed: bool,
+// }
+
 #[account]
 #[derive(Default)]
-pub struct MerkleDistributor {
-    /// Base key used to generate the PDA.
-    pub base: Pubkey,
-    /// Bump seed.
+pub struct CandyMachine {
+    pub authority: Pubkey,
+    pub wallet: Pubkey,
+    pub token_mint: Option<Pubkey>,
+    pub config: Pubkey,
+    pub data: CandyMachineData,
+    pub items_redeemed: u64,
     pub bump: u8,
-
-    /// The 256-bit merkle root.
-    pub root: [u8; 32],
-
-    /// [Mint] of the token to be distributed.
-    pub mint: Pubkey,
-    /// Maximum number of tokens that can ever be claimed from this [MerkleDistributor].
-    pub max_total_claim: u64,
-    /// Maximum number of nodes that can ever be claimed from this [MerkleDistributor].
-    pub max_num_nodes: u64,
-    /// Total amount of tokens that have been claimed.
-    pub total_amount_claimed: u64,
-    /// Number of nodes that have been claimed.
-    pub num_nodes_claimed: u64,
-    pub uuid: String,
 }
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
+pub struct CandyMachineData {
+    pub uuid: String,
+    pub price: u64,
+}
+
+pub const CONFIG_ARRAY_START: usize = 32 + // authority
+4 + 6 + // uuid + u32 len
+4 + MAX_SYMBOL_LENGTH + // u32 len + symbol
+2 + // seller fee basis points
+1 + 4 + MAX_CREATOR_LIMIT*MAX_CREATOR_LEN + // optional + u32 len + actual vec
+8 + //max supply
+1 + // is mutable
+1 + // retain authority
+4; // max number of lines;
 
 #[account]
 #[derive(Default)]
-pub struct ClaimStatus {
-    /// If true, the tokens have been claimed.
-    pub is_claimed: bool,
-    /// Authority that claimed the tokens.
-    pub claimant: Pubkey,
-    /// When the tokens were claimed.
-    pub claimed_at: i64,
-    /// Amount of tokens claimed.
-    pub amount: u64,
+pub struct Config {
+    pub authority: Pubkey,
+    pub data: ConfigData,
+    // there's a borsh vec u32 denoting how many actual lines of data there are currently (eventually equals max number of lines)
+    // There is actually lines and lines of data after this but we explicitly never want them deserialized.
+    // here there is a borsh vec u32 indicating number of bytes in bitmask array.
+    // here there is a number of bytes equal to ceil(max_number_of_lines/8) and it is a bit mask used to figure out when to increment borsh vec u32
 }
 
-/// Emitted when tokens are claimed.
-#[event]
-pub struct ClaimedEvent {
-    /// Index of the claim.
-    pub index: u64,
-    /// User that claimed.
-    pub claimant: Pubkey,
-    /// Amount of tokens to distribute.
-    pub amount: u64,
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
+pub struct ConfigData {
+    pub uuid: String,
+    /// The symbol for the asset
+    pub symbol: String,
+    pub is_mutable: bool,
+    pub retain_authority: bool,
+    pub uri: String,
 }
 
 #[error]
 pub enum ErrorCode {
-    #[msg("Invalid Merkle proof.")]
-    InvalidProof,
-    #[msg("Drop already claimed.")]
-    DropAlreadyClaimed,
-    #[msg("Exceeded maximum claim amount.")]
-    ExceededMaxClaim,
-    #[msg("Exceeded maximum number of claimed nodes.")]
-    ExceededMaxNumNodes,
-    #[msg("Account is not authorized to execute this instruction")]
-    Unauthorized,
-    #[msg("Token account owner did not match intended owner")]
-    OwnerMismatch,
+    #[msg("Account does not have correct owner!")]
+    IncorrectOwner,
+    #[msg("Account is not initialized!")]
+    Uninitialized,
+    #[msg("Mint Mismatch!")]
+    MintMismatch,
+    #[msg("Index greater than length!")]
+    IndexGreaterThanLength,
+    #[msg("Config must have atleast one entry!")]
+    ConfigMustHaveAtleastOneEntry,
+    #[msg("Numerical overflow error!")]
+    NumericalOverflowError,
+    #[msg("Can only provide up to 4 creators to candy machine (because candy machine is one)!")]
+    TooManyCreators,
+    #[msg("Uuid must be exactly of 6 length")]
+    UuidMustBeExactly6Length,
+    #[msg("Not enough tokens to pay for this minting")]
+    NotEnoughTokens,
+    #[msg("Not enough SOL to pay for this minting")]
+    NotEnoughSOL,
+    #[msg("Token transfer failed")]
+    TokenTransferFailed,
+    #[msg("Candy machine is empty!")]
+    CandyMachineEmpty,
+    #[msg("Candy machine is not live yet!")]
+    CandyMachineNotLiveYet,
+    #[msg("Number of config lines must be at least number of items available")]
+    ConfigLineMismatch,
 }
