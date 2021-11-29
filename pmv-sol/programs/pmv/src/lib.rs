@@ -27,11 +27,12 @@ pub mod nft_candy_machine {
 
     pub fn mint_nft<'info>(
         ctx: Context<'_, '_, '_, 'info, MintNFT<'info>>,
+        _bump: u8,
         token_index: u64,
     ) -> ProgramResult {
         let candy_machine = &mut ctx.accounts.candy_machine;
         let config = &ctx.accounts.config;
-        //let claim_status = &mut ctx.accounts.claim_status;
+        let claim_status = &mut ctx.accounts.claim_status;
 
         if let Some(mint) = candy_machine.token_mint {
             let token_account_info = &ctx.remaining_accounts[0];
@@ -174,7 +175,7 @@ pub mod nft_candy_machine {
             ],
             &[&authority_seeds],
         )?;
-        //claim_status.is_claimed = true;
+        claim_status.is_claimed = true;
 
         Ok(())
     }
@@ -309,7 +310,9 @@ pub struct WithdrawFunds<'info> {
     #[account(signer, address = config.authority)]
     authority: AccountInfo<'info>,
 }
+
 #[derive(Accounts)]
+#[instruction(_bump: u8, token_index: u64)]
 pub struct MintNFT<'info> {
     config: Account<'info, Config>,
     #[account(
@@ -320,6 +323,17 @@ pub struct MintNFT<'info> {
         bump = candy_machine.bump,
     )]
     candy_machine: Account<'info, CandyMachine>,
+    #[account(
+        init,
+        seeds = [
+            b"ClaimStatus".as_ref(),
+            token_index.to_le_bytes().as_ref(),
+            candy_machine.key().to_bytes().as_ref()
+        ],
+        bump = _bump,
+        payer = payer
+    )]
+    pub claim_status: Account<'info, ClaimStatus>,
     #[account(mut)]
     payer: Signer<'info>,
     #[account(mut)]
@@ -355,12 +369,12 @@ pub struct UpdateCandyMachine<'info> {
     authority: AccountInfo<'info>,
 }
 
-// #[account]
-// #[derive(Default)]
-// pub struct ClaimStatus {
-//     /// If true, the tokens have been claimed.
-//     pub is_claimed: bool,
-// }
+#[account]
+#[derive(Default)]
+pub struct ClaimStatus {
+    /// If true, the tokens have been claimed.
+    pub is_claimed: bool,
+}
 
 #[account]
 #[derive(Default)]

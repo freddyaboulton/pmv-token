@@ -1,6 +1,7 @@
 import * as anchor from "@project-serum/anchor";
 
 import assert from "assert";
+import chai, { expect } from "chai";
 
 import { AccountLayout, MintLayout, Token } from "@solana/spl-token";
 import {
@@ -9,6 +10,7 @@ import {
   SYSVAR_RENT_PUBKEY,
   TransactionInstruction,
 } from "@solana/web3.js";
+import type { SendTransactionError } from "@solana/web3.js";
 import { CandyMachine, Config } from "./nft-candy-machine-types";
 const TOKEN_PROGRAM_ID = new PublicKey(
   "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
@@ -282,8 +284,8 @@ describe("nft-candy-machine", function () {
       assert.equal(machine.tokenMint, null);
     });
 
-    it("mints 10x", async function () {
-      for (let i = 1; i < 11; i++) {
+    it("mints 5x", async function () {
+      for (let i = 1; i < 6; i++) {
         const mint = anchor.web3.Keypair.generate();
         const token = await getTokenWallet(
           this.authority.publicKey,
@@ -296,14 +298,15 @@ describe("nft-candy-machine", function () {
           this.candyMachineUuid
         );
         try {
-          //const [claimStatus, bump] = await findClaimStatusKey(i, candyMachine);
-          //new anchor.BN(bump)
+          const [claimStatus, bump] = await findClaimStatusKey(i, candyMachine);
           const tx = await program.rpc.mintNft(
+            new anchor.BN(bump),
             new anchor.BN(i),
             {
               accounts: {
                 config: this.config.publicKey,
                 candyMachine: candyMachine,
+                claimStatus: claimStatus,
                 payer: this.authority.publicKey,
                 wallet: myWallet.publicKey,
                 mint: mint.publicKey,
@@ -359,23 +362,172 @@ describe("nft-candy-machine", function () {
                 ),
               ],
             });
+          const [key] = await findClaimStatusKey(i, candyMachine);
+          const status = await program.account.claimStatus.fetch(key);
+          assert(status.isClaimed === true);
         } catch (e) {
-          if (i != 10) {
+          if (i != 5) {
             console.log("Failure at ", i, e);
             throw e;
           }
         }
 
-        // if (i != 10) {
-        //   const metadataAccount = await connection.getAccountInfo(metadata);
-        //   assert.ok(metadataAccount.data.length > 0);
-        //   const masterEditionAccount = await connection.getAccountInfo(
-        //     masterEdition
-        //   );
-        //   assert.ok(masterEditionAccount.data.length > 0);
-        // }
+        if (i != 5) {
+          const metadataAccount = await connection.getAccountInfo(metadata);
+          assert.ok(metadataAccount.data.length > 0);
+          const masterEditionAccount = await connection.getAccountInfo(
+            masterEdition
+          );
+          assert.ok(masterEditionAccount.data.length > 0);
+        }
       }
     });
+
+    it("Does not allow minting same index twice", async function () {
+      const mint = anchor.web3.Keypair.generate();
+      const token = await getTokenWallet(
+        this.authority.publicKey,
+        mint.publicKey
+      );
+      const metadata = await getMetadata(mint.publicKey);
+      const masterEdition = await getMasterEdition(mint.publicKey);
+      const [candyMachine, _] = await getCandyMachine(
+        this.config.publicKey,
+        this.candyMachineUuid
+      );
+      const [claimStatus, bump] = await findClaimStatusKey(6, candyMachine);
+      const tx = await program.rpc.mintNft(
+        new anchor.BN(bump),
+        new anchor.BN(6),
+        {
+          accounts: {
+            config: this.config.publicKey,
+            candyMachine: candyMachine,
+            claimStatus: claimStatus,
+            payer: this.authority.publicKey,
+            wallet: myWallet.publicKey,
+            mint: mint.publicKey,
+            metadata: metadata,
+            masterEdition: masterEdition,
+            mintAuthority: this.authority.publicKey,
+            updateAuthority: this.authority.publicKey,
+            tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+            rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+            clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+          },
+          signers: [mint, this.authority, myWallet],
+          instructions: [
+            anchor.web3.SystemProgram.transfer({
+              fromPubkey: myWallet.publicKey,
+              toPubkey: this.authority.publicKey,
+              lamports: 1000000000 + 10000000, // add minting fees in there
+            }),
+            anchor.web3.SystemProgram.createAccount({
+              fromPubkey: myWallet.publicKey,
+              newAccountPubkey: mint.publicKey,
+              space: MintLayout.span,
+              lamports:
+                await provider.connection.getMinimumBalanceForRentExemption(
+                  MintLayout.span
+                ),
+              programId: TOKEN_PROGRAM_ID,
+            }),
+            Token.createInitMintInstruction(
+              TOKEN_PROGRAM_ID,
+              mint.publicKey,
+              0,
+              this.authority.publicKey,
+              this.authority.publicKey
+            ),
+            createAssociatedTokenAccountInstruction(
+              token,
+              myWallet.publicKey,
+              this.authority.publicKey,
+              mint.publicKey
+            ),
+            Token.createMintToInstruction(
+              TOKEN_PROGRAM_ID,
+              mint.publicKey,
+              token,
+              this.authority.publicKey,
+              [],
+              1
+            ),
+          ],
+        });
+      try {
+        const [claimStatus, bump] = await findClaimStatusKey(6, candyMachine);
+        const tx = await program.rpc.mintNft(
+          new anchor.BN(bump),
+          new anchor.BN(6),
+          {
+            accounts: {
+              config: this.config.publicKey,
+              candyMachine: candyMachine,
+              claimStatus: claimStatus,
+              payer: this.authority.publicKey,
+              wallet: myWallet.publicKey,
+              mint: mint.publicKey,
+              metadata: metadata,
+              masterEdition: masterEdition,
+              mintAuthority: this.authority.publicKey,
+              updateAuthority: this.authority.publicKey,
+              tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+              tokenProgram: TOKEN_PROGRAM_ID,
+              systemProgram: SystemProgram.programId,
+              rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+              clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+            },
+            signers: [mint, this.authority, myWallet],
+            instructions: [
+              anchor.web3.SystemProgram.transfer({
+                fromPubkey: myWallet.publicKey,
+                toPubkey: this.authority.publicKey,
+                lamports: 1000000000 + 10000000, // add minting fees in there
+              }),
+              anchor.web3.SystemProgram.createAccount({
+                fromPubkey: myWallet.publicKey,
+                newAccountPubkey: mint.publicKey,
+                space: MintLayout.span,
+                lamports:
+                  await provider.connection.getMinimumBalanceForRentExemption(
+                    MintLayout.span
+                  ),
+                programId: TOKEN_PROGRAM_ID,
+              }),
+              Token.createInitMintInstruction(
+                TOKEN_PROGRAM_ID,
+                mint.publicKey,
+                0,
+                this.authority.publicKey,
+                this.authority.publicKey
+              ),
+              createAssociatedTokenAccountInstruction(
+                token,
+                myWallet.publicKey,
+                this.authority.publicKey,
+                mint.publicKey
+              ),
+              Token.createMintToInstruction(
+                TOKEN_PROGRAM_ID,
+                mint.publicKey,
+                token,
+                this.authority.publicKey,
+                [],
+                1
+              ),
+            ],
+          });
+      } catch (e) {
+        const err = e as SendTransactionError;
+        expect(err.logs?.join(" ")).to.have.string(
+          "already in use"
+        );
+      }
+    });
+
   });
 });
 
