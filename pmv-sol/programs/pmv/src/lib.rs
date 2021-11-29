@@ -13,7 +13,7 @@ use {
     },
     spl_token::state::Mint,
 };
-anchor_lang::declare_id!("cndyAnrLdpjq1Ssp1z8xxDsB8dxe7u4HL5Nxi2K5WXZ");
+anchor_lang::declare_id!("2MvgrbsWoramiYaBBE9pqhXcg72ByZvbMJCNDbrekvHV");
 
 const PREFIX: &str = "candy_machine";
 #[program]
@@ -25,7 +25,10 @@ pub mod nft_candy_machine {
 
     use super::*;
 
-    pub fn mint_nft<'info>(ctx: Context<'_, '_, '_, 'info, MintNFT<'info>>) -> ProgramResult {
+    pub fn mint_nft<'info>(
+        ctx: Context<'_, '_, '_, 'info, MintNFT<'info>>,
+        token_index: u64,
+    ) -> ProgramResult {
         let candy_machine = &mut ctx.accounts.candy_machine;
         let config = &ctx.accounts.config;
         //let claim_status = &mut ctx.accounts.claim_status;
@@ -57,7 +60,6 @@ pub mod nft_candy_machine {
             if ctx.accounts.payer.lamports() < candy_machine.data.price {
                 return Err(ErrorCode::NotEnoughSOL.into());
             }
-
             invoke(
                 &system_instruction::transfer(
                     &ctx.accounts.payer.key,
@@ -89,7 +91,7 @@ pub mod nft_candy_machine {
             vec![metaplex_token_metadata::state::Creator {
                 address: candy_machine.key(),
                 verified: true,
-                share: 0,
+                share: 100,
             }];
 
         let metadata_infos = vec![
@@ -116,7 +118,6 @@ pub mod nft_candy_machine {
             ctx.accounts.rent.to_account_info(),
             candy_machine.to_account_info(),
         ];
-
         invoke_signed(
             &create_metadata_accounts(
                 *ctx.accounts.token_metadata_program.key,
@@ -125,9 +126,9 @@ pub mod nft_candy_machine {
                 *ctx.accounts.mint_authority.key,
                 *ctx.accounts.payer.key,
                 candy_machine.key(),
-                format!("{}{}", config.data.symbol, 1),
+                format!("{} {}", config.data.symbol.clone(), token_index),
                 config.data.symbol.clone(),
-                format!("{}{}", config.data.uri, 1),
+                format!("{}{}", config.data.uri.clone(), token_index),
                 Some(creators),
                 0,
                 true,
@@ -136,7 +137,6 @@ pub mod nft_candy_machine {
             metadata_infos.as_slice(),
             &[&authority_seeds],
         )?;
-
         invoke_signed(
             &create_master_edition(
                 *ctx.accounts.token_metadata_program.key,
@@ -158,7 +158,6 @@ pub mod nft_candy_machine {
         if !ctx.accounts.config.data.retain_authority {
             new_update_authority = Some(ctx.accounts.update_authority.key());
         }
-
         invoke_signed(
             &update_metadata_accounts(
                 *ctx.accounts.token_metadata_program.key,
@@ -175,7 +174,6 @@ pub mod nft_candy_machine {
             ],
             &[&authority_seeds],
         )?;
-
         //claim_status.is_claimed = true;
 
         Ok(())
@@ -312,7 +310,6 @@ pub struct WithdrawFunds<'info> {
     authority: AccountInfo<'info>,
 }
 #[derive(Accounts)]
-#[instruction(_bump: u8, token_index: u64)]
 pub struct MintNFT<'info> {
     config: Account<'info, Config>,
     #[account(

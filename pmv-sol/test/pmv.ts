@@ -282,8 +282,8 @@ describe("nft-candy-machine", function () {
       assert.equal(machine.tokenMint, null);
     });
 
-    it("mints 10x and then ends due to being out of candy", async function () {
-      for (let i = 0; i < 2; i++) {
+    it("mints 10x", async function () {
+      for (let i = 1; i < 11; i++) {
         const mint = anchor.web3.Keypair.generate();
         const token = await getTokenWallet(
           this.authority.publicKey,
@@ -297,10 +297,9 @@ describe("nft-candy-machine", function () {
         );
         try {
           //const [claimStatus, bump] = await findClaimStatusKey(i, candyMachine);
-          console.log(candyMachine);
           //new anchor.BN(bump)
           const tx = await program.rpc.mintNft(
-            //new anchor.BN(1),
+            new anchor.BN(i),
             {
               accounts: {
                 config: this.config.publicKey,
@@ -308,8 +307,8 @@ describe("nft-candy-machine", function () {
                 payer: this.authority.publicKey,
                 wallet: myWallet.publicKey,
                 mint: mint.publicKey,
-                metadata,
-                masterEdition,
+                metadata: metadata,
+                masterEdition: masterEdition,
                 mintAuthority: this.authority.publicKey,
                 updateAuthority: this.authority.publicKey,
                 tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
