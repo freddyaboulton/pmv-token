@@ -2,7 +2,8 @@
     "type": "module",
     "dependencies": {
         "@project-serum/anchor": "^0.18.0",
-        "@solana/spl-token": "^0.1.8"
+        "@solana/spl-token": "^0.1.8",
+        "express": "^4.17.1"
     },
     "devDependencies": {
         "@types/mocha": "^9.0.0",
