@@ -284,11 +284,11 @@ describe("nft-candy-machine", function () {
       assert.equal(machine.tokenMint, null);
     });
 
-    it("mints 5x", async function () {
+    it("mints 5x to account not authority", async function () {
       for (let i = 1; i < 6; i++) {
         const mint = anchor.web3.Keypair.generate();
         const token = await getTokenWallet(
-          this.authority.publicKey,
+          myWallet.publicKey,
           mint.publicKey
         );
         const metadata = await getMetadata(mint.publicKey);
@@ -312,15 +312,15 @@ describe("nft-candy-machine", function () {
                 mint: mint.publicKey,
                 metadata: metadata,
                 masterEdition: masterEdition,
-                mintAuthority: this.authority.publicKey,
-                updateAuthority: this.authority.publicKey,
+                mintAuthority: myWallet.publicKey,
+                updateAuthority: myWallet.publicKey,
                 tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
                 tokenProgram: TOKEN_PROGRAM_ID,
                 systemProgram: SystemProgram.programId,
                 rent: anchor.web3.SYSVAR_RENT_PUBKEY,
                 clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
               },
-              signers: [mint, this.authority, myWallet],
+              signers: [mint, this.authority],
               instructions: [
                 // Give authority enough to pay off the cost of the nft!
                 // it'll be funnneled right back
@@ -343,20 +343,20 @@ describe("nft-candy-machine", function () {
                   TOKEN_PROGRAM_ID,
                   mint.publicKey,
                   0,
-                  this.authority.publicKey,
-                  this.authority.publicKey
+                  myWallet.publicKey,
+                  myWallet.publicKey
                 ),
                 createAssociatedTokenAccountInstruction(
                   token,
                   myWallet.publicKey,
-                  this.authority.publicKey,
+                  myWallet.publicKey,
                   mint.publicKey
                 ),
                 Token.createMintToInstruction(
                   TOKEN_PROGRAM_ID,
                   mint.publicKey,
                   token,
-                  this.authority.publicKey,
+                  myWallet.publicKey,
                   [],
                   1
                 ),
@@ -527,7 +527,6 @@ describe("nft-candy-machine", function () {
         );
       }
     });
-
   });
 });
 
