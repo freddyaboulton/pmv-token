@@ -1,16 +1,38 @@
-.PHONY: install-deps
-install-deps-linux:
+install-sol:
+	cd pmv-sol && npm install
+
+install-eth:
 	npm install
 
-.PHONY: build
-build:
-	npx hardhat compile
+.PHONY: install-deps
+install: install-eth install-sol
+
+test-sol:
+	cd pmv-sol && npm test
+
+build-eth:
+	cd pmv-eth && npx hardhat compile
+
+test-eth: build-eth
+	cd pmv-eth && npx hardhat test
 
 .PHONY: test
-test: build
-	npx hardhat test
+test: test-eth
+
+lint-sol:
+	cd pmv-sol && npx eslint app
+
+lint-eth: lint-sol
+	cd pmv-eth && npx eslint test
 
 .PHONY: lint
-lint: 
-	npx eslint test
-	npx eslint pmv-sol/app
+lint: lint-eth lint-sol
+
+lint-sol-fix:
+	cd pmv-sol && npx eslint app --fix
+
+lint-eth-fix: lint-sol-fix
+	cd pmv-eth && npx eslint test --fix
+
+.PHONY: lint-fix
+lint-fix: lint-eth-fix lint-sol-fix
