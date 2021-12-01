@@ -1,21 +1,25 @@
 import express from 'express';
-import { initialize } from './helpers.js';
-import { mintToken } from './claim.js';
+import {initialize} from './helpers.js';
+import {mintToken} from './claim.js';
 
-const app = express()
-const port = 3000
+const app = express();
+const port = 3000;
+
+app.use(express.urlencoded({extended: true}));
+
 
 await initialize();
 
-app.get("/", function (req, res) {
-    res.send('Hello World!');
-})
+app.get('/', function(req, res) {
+  res.send('Hello World!');
+});
 
-app.get('/claim/:solAddress/:tokenIndex', function (req, res) {
-    const tx = mintToken(req.params.solAddress, req.params.tokenIndex);
-    res.send(tx);
-})
+app.post('/claim/:tokenIndex', function(req, res) {
+  console.log(req.body.solAddress);
+  const tx = mintToken(req.body.solAddress, req.params.tokenIndex);
+  res.send(tx);
+});
 
 app.listen(port, () => {
-    console.log(`Example app listening at http://localhost:${port}`)
-})
+  console.log(`Example app listening at http://localhost:${port}`);
+});

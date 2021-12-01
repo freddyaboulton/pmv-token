@@ -13,3 +13,4 @@ test: build
 .PHONY: lint
 lint: 
 	npx eslint test
+	npx eslint pmv-sol/app
