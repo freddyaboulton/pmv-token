@@ -22,7 +22,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 2
       - name: Install 
-        run: make install-deps
+        run: make install
       - name: Run unit tests
         run: make test
   lint:
@@ -39,6 +39,6 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 2
       - name: Install 
-        run: make install-deps-linux
+        run: make install
       - name: Lint
         run: make lint
