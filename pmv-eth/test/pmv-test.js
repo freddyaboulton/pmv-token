@@ -53,6 +53,41 @@ describe('PMV', function() {
       expect(await pmv.maxSupply()).to.equal(30);
     });
 
+    it('Should let users view presale and sale status', async function() {
+      expect(await pmv.presaleActive()).to.be.false;
+      await pmv.connect(owner).setPresale(true);
+      expect(await pmv.presaleActive()).to.be.true;
+
+      expect(await pmv.saleActive()).to.be.false;
+      await pmv.connect(owner).setSale(true);
+      expect(await pmv.saleActive()).to.be.true;
+    });
+
+    it('Should let the owner change the root', async function() {
+      const newEntries = [[owner.address, 1],
+        [addr1.address, 1],
+      ];
+      const newHashes = newEntries.map((token) => hashToken(...token));
+      tree = new MerkleTree(newHashes, keccak256, {sortPairs: true});
+      const newRoot = tree.getHexRoot();
+      await pmv.connect(owner).setRoot(newRoot);
+      expect(await pmv.connect(addr1).root()).to.equal(newRoot);
+    });
+
+    it('Should not let non-owners change the root', async function() {
+      const newEntries = [[owner.address, 1],
+        [addr1.address, 1],
+      ];
+      const newHashes = newEntries.map((token) => hashToken(...token));
+      tree = new MerkleTree(newHashes, keccak256, {sortPairs: true});
+      const newRoot = tree.getHexRoot();
+      try {
+        await pmv.connect(addr1).setRoot(newRoot);
+      } catch (error) {
+        expect(error.message).to.contain('caller is not the owner');
+      }
+    });
+
     it('Should not let users mintPresale when presale is not active',
         async function() {
           const proof = validTree.getHexProof(hashToken(addr1.address, 1));

@@ -15,9 +15,9 @@ contract PMV is ERC721Enumerable, Ownable {
     uint256 public constant maxSupply = 30;
     uint256 public constant maxPerWallet = 10;
     uint public constant salePrice = 0.02 ether;
-    bytes32 immutable public root;
-    bool private presaleActive = false; 
-    bool private saleActive = false;
+    bytes32 public root;
+    bool public presaleActive = false; 
+    bool public saleActive = false;
     mapping (address => uint256) private presaleMints;
     mapping (address => uint256) private mints;    
     string private tokenBaseURI;
@@ -82,6 +82,11 @@ contract PMV is ERC721Enumerable, Ownable {
         require(bytes(_tokenBaseURI).length > 0, "_tokenBaseURI is empty");
         revealed = _revealed;
         tokenBaseURI = _tokenBaseURI;
+    }
+
+    function setRoot(bytes32 _root) external onlyOwner {
+        require(_root.length > 0, "_root is empty");
+        root = _root;
     }
 
 }
