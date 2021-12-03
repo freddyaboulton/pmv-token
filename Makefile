@@ -7,7 +7,10 @@ install-eth:
 .PHONY: install-deps
 install: install-eth install-sol
 
-test-sol:
+build-sol:
+	cd pmv-sol && anchor build && cp target/idl/* app/idl/
+
+test-sol: launch-app
 	cd pmv-sol && npm test
 
 build-eth:

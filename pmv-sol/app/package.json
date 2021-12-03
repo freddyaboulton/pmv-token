@@ -3,9 +3,15 @@
   "version": "1.0.0",
   "description": "",
   "type": "module",
+  "dependencies": {
+    "@metamask/eth-sig-util": "^4.0.0",
+    "@project-serum/anchor": "^0.18.0",
+    "@solana/spl-token": "^0.1.8",
+    "express": "^4.17.1"
+  },
   "scripts": {
-    "run": "env MY_WALLET=$HOME/.config/solana/id.json app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "run": "env MY_WALLET=$HOME/.config/solana/id.json node app.js",
+    "test": "mocha  --timeout 1000000"
   },
   "author": "",
   "license": "ISC"
