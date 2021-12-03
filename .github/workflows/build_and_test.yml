@@ -8,7 +8,7 @@ on:
       - main
 
 jobs:
-  unit_tests:
+  unit_test:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Node 14
@@ -23,8 +23,33 @@ jobs:
           fetch-depth: 2
       - name: Install 
         run: make install
-      - name: Run unit tests
-        run: make test
+      - name: Run ETH unit tests
+        run: make test-eth
+  unit_test_sol:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node 14
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 2
+      - name: Install 
+        run: make install
+      - name: Install SOL CLI
+        run: sh -c "$(curl -sSfL https://release.solana.com/v1.8.0/install)"
+      - name: Make a Keypair
+        run: solana-keygen new
+      - name: Request SOL
+        run: solana airdrop 5 --url devnet
+      - name: Request SOL Again
+        run: solana airdrop 5 --url devnet
+      - name: Run SOL unit tests
+        run: make test-sol -j2
   lint:
     runs-on: ubuntu-latest
     steps:

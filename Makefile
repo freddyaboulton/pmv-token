@@ -10,17 +10,20 @@ install: install-eth install-sol
 build-sol:
 	cd pmv-sol && anchor build && cp target/idl/* app/idl/
 
-test-sol: launch-app
-	cd pmv-sol && npm test
+launch-app:
+	cd pmv-sol/app && env MY_WALLET=$$HOME/.config/solana/id.json node app.js &
+
+test-sol_: launch-app
+	cd pmv-sol && npm test && cd app && npm test
+
+test-sol: launch-app test-sol_
+	kill -9 $$(ps aux | grep '\snode\s' | awk '{print $$2}')
 
 build-eth:
 	cd pmv-eth && npx hardhat compile
 
 test-eth: build-eth
 	cd pmv-eth && npx hardhat test
-
-.PHONY: test
-test: test-eth
 
 lint-sol:
 	cd pmv-sol && npx eslint app
