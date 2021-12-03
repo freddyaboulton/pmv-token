@@ -13,13 +13,10 @@ build-sol:
 launch-app:
 	cd pmv-sol/app && env MY_WALLET=$$HOME/.config/solana/id.json node app.js &
 
-test-sol-contract:
-	cd pmv-sol && npm test
+test-sol_: launch-app
+	cd pmv-sol && npm test && cd app && npm test
 
-test-sol-app: launch-app
-	cd pmv-sol/app && npm test
-
-test-sol: test-sol-contract test-sol-app
+test-sol: test-sol_
 	kill -9 $$(ps aux | grep '\snode\s' | awk '{print $$2}')
 
 build-eth:
