@@ -43,11 +43,11 @@ jobs:
       - name: Install SOL CLI
         run: sh -c "$(curl -sSfL https://release.solana.com/v1.8.0/install)"
       - name: Make a Keypair
-        run: solana-keygen new
+        run: /home/runner/.local/share/solana/install/active_release/bin/solana-keygen new
       - name: Request SOL
-        run: solana airdrop 5 --url devnet
+        run: /home/runner/.local/share/solana/install/active_release/bin/solana airdrop 5 --url devnet
       - name: Request SOL Again
-        run: solana airdrop 5 --url devnet
+        run: /home/runner/.local/share/solana/install/active_release/bin/solana airdrop 5 --url devnet
       - name: Run SOL unit tests
         run: make test-sol -j2
   lint:
