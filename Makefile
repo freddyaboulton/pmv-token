@@ -17,7 +17,7 @@ test-sol-contract:
 	cd pmv-sol && npm test
 
 test-sol-app: launch-app
- 	cd pmv-sol/app && npm test
+	cd pmv-sol/app && npm test
 
 test-sol: test-sol-contract test-sol-app
 	kill -9 $$(ps aux | grep '\snode\s' | awk '{print $$2}')
