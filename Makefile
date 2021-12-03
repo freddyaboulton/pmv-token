@@ -1,5 +1,5 @@
 install-sol:
-	cd pmv-sol && npm install
+	cd pmv-sol && npm install && cd app && npm install
 
 install-eth:
 	npm install

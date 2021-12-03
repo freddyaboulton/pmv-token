@@ -14,5 +14,8 @@
     "test": "mocha  --timeout 1000000"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "mocha": "^9.1.3"
+  }
 }

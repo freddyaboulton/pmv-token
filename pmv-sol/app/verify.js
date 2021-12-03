@@ -2,7 +2,9 @@ import {recoverPersonalSignature} from '@metamask/eth-sig-util';
 
 
 /**
- * Verify the signature
+ * Make hashed message
+ * @param {string} publicKey - public key of user that signed the message.
+ * @return {string} message before signing.
  */
 export function makeMessage(publicKey) {
   const body = `Let ${publicKey} claim please`;
@@ -13,6 +15,9 @@ export function makeMessage(publicKey) {
 
 /**
  * Verify the signature
+ * @param {string} signature - signature from user.
+ * @param {string} publicKey - public key of user that signed the message.
+ * @return {bool} True if signature was signed by publicKey.
  */
 export function verify(signature, publicKey) {
   const msg = makeMessage(publicKey);
