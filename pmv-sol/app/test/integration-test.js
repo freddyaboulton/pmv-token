@@ -87,4 +87,17 @@ describe('server-verify', function() {
     expect(res.data.ok).to.be.true;
     expect(res.data.isVerified).to.be.true;
   });
+
+  it('Should not verify publicKey1 with privateKey2', async function() {
+    const signature = personalSign(
+        {privateKey: privateKey2,
+          data: makeMessage(publicKey2)});
+    const res = await axios.post('http://localhost:3000/claim/4', {
+      solAddress: '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5',
+      ethAddress: publicKey1,
+      signature: signature,
+    });
+    expect(res.data.ok).to.be.false;
+    expect(res.data.isVerified).to.be.false;
+  });
 });
