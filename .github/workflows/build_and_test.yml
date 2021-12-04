@@ -27,6 +27,9 @@ jobs:
         run: make test-eth
   unit_tests_sol:
     runs-on: ubuntu-latest
+    env:
+      ETH_PMV_ADDRESS: '0x5FbDB2315678afecb367f032d93F642f64180aa3'
+      ETH_PROVIDER: http://localhost:8545
     steps:
       - name: Set up Node 14
         uses: actions/setup-node@v2
