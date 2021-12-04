@@ -2,6 +2,7 @@ import {createRequire} from 'module';
 const require = createRequire(import.meta.url);
 
 const anchor = require('@project-serum/anchor');
+const fs = require('fs');
 import {
   PublicKey,
   SYSVAR_RENT_PUBKEY,
@@ -13,6 +14,14 @@ import {
   SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
   CANDY_MACHINE, CONFIG_ARRAY_START, CONFIG, AUTHORITY, UUID,
 } from './constants.js';
+import {ethers} from 'ethers';
+
+const parsed = JSON.parse(fs.readFileSync('./idl/PMV.json'));
+
+const ethProvider = new ethers.providers.JsonRpcProvider();
+console.log(process.env.ETH_PMV_ADDRESS);
+export const pmv = new ethers.Contract(process.env.ETH_PMV_ADDRESS,
+    parsed.abi, ethProvider);
 
 
 const connection = new anchor.web3.Connection(
@@ -22,7 +31,7 @@ const connection = new anchor.web3.Connection(
 
 export const myWallet = anchor.web3.Keypair.fromSecretKey(
     new Uint8Array(
-        JSON.parse(require('fs').readFileSync(process.env.MY_WALLET, 'utf8')),
+        JSON.parse(fs.readFileSync(process.env.MY_WALLET, 'utf8')),
     ),
 );
 

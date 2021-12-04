@@ -49,7 +49,9 @@ jobs:
       - name: Request SOL Again
         run: /home/runner/.local/share/solana/install/active_release/bin/solana airdrop 5 --url devnet
       - name: Run SOL unit tests
-        run: make test-sol -j2
+        run: make test-sol
+      - name: Run SOL integration tests
+        run: make test-sol-integration
   lint:
     runs-on: ubuntu-latest
     steps:
