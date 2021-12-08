@@ -236,4 +236,18 @@ describe('server-verify', function() {
     expect(res.status).to.equal(400);
     expect(res.data.errors[0].msg).to.equal('Invalid Token Index');
   });
+
+  it('Should not verify float tokenIndex', async function() {
+    const signature = personalSign(
+        {privateKey: privateKey3,
+          data: makeMessage(publicKey3)});
+    const res = await axios.post('http://localhost:3000/claim', {
+      solAddress: '0x5faaf2315678afecb367f032d93f642f64180aa3',
+      ethAddress: publicKey3,
+      signature: signature,
+      tokenIndex: 3.14,
+    });
+    expect(res.status).to.equal(400);
+    expect(res.data.errors[0].msg).to.equal('Invalid Token Index');
+  });
 });
