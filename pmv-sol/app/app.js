@@ -3,6 +3,7 @@ import {initialize, pmv} from './helpers.js';
 import {mintToken} from './claim.js';
 import {verify} from './verify.js';
 import {ethers} from 'ethers';
+import {PublicKey} from '@solana/web3.js';
 
 const app = express();
 app.use(express.json());
@@ -23,8 +24,16 @@ app.post('/claim/:tokenIndex', async function(req, res) {
   let isOwner;
   let isVerified;
   let isApproved;
+  let isValidSolAddress;
 
-  if (ethers.utils.isAddress(req.body.ethAddress)) {
+  try {
+    const solAddress = new PublicKey(req.body.solAddress);
+    isValidSolAddress = PublicKey.isOnCurve(solAddress.toBytes());
+  } catch (e) {
+    isValidSolAddress = false;
+  }
+
+  if (ethers.utils.isAddress(req.body.ethAddress) && isValidSolAddress) {
     const ownerOfToken = await pmv.ownerOf(req.params.tokenIndex);
     const sanitizedAddress = ethers.utils.getAddress(req.body.ethAddress);
     isOwner = ownerOfToken === sanitizedAddress;

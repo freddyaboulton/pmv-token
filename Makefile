@@ -23,7 +23,7 @@ test-sol:
 	cd pmv-sol && npm test
 
 test-sol-integration_: deploy-pmv-test launch-app
-	sleep 3 && cd pmv-sol/app && npm test
+	sleep 4 && cd pmv-sol/app && npm test
 
 test-sol-integration: test-sol-integration_
 	kill -9 $$(ps aux | grep '\snode\s' | awk '{print $$2}')

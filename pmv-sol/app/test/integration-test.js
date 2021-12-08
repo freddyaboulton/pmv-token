@@ -3,7 +3,6 @@ import {makeMessage} from '../verify.js';
 import {personalSign} from '@metamask/eth-sig-util';
 import axios from 'axios';
 
-
 describe('server-verify', function() {
   let publicKey1;
   let privateKey1;
@@ -122,6 +121,81 @@ describe('server-verify', function() {
     });
     expect(res.data.ok).to.be.false;
     expect(res.data.isVerified).to.be.true;
+    expect(res.data.isOwner).to.be.false;
+    expect(res.data.isApproved).to.be.false;
+  });
+
+  it('Should not verify invalid EthAddresses', async function() {
+    const signature = personalSign(
+        {privateKey: privateKey3,
+          data: makeMessage(publicKey3)});
+    const res = await axios.post('http://localhost:3000/claim/14', {
+      solAddress: '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5',
+      ethAddress: 'fooAddress',
+      signature: signature,
+    });
+    expect(res.data.ok).to.be.false;
+    expect(res.data.isVerified).to.be.false;
+    expect(res.data.isOwner).to.be.false;
+    expect(res.data.isApproved).to.be.false;
+  });
+
+  it('Should not verify invalid EthAddresses 2', async function() {
+    const signature = personalSign(
+        {privateKey: privateKey3,
+          data: makeMessage(publicKey3)});
+    const res = await axios.post('http://localhost:3000/claim/14', {
+      solAddress: '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5',
+      ethAddress: 5,
+      signature: signature,
+    });
+    expect(res.data.ok).to.be.false;
+    expect(res.data.isVerified).to.be.false;
+    expect(res.data.isOwner).to.be.false;
+    expect(res.data.isApproved).to.be.false;
+  });
+
+  it('Should not verify invalid solAddress', async function() {
+    const signature = personalSign(
+        {privateKey: privateKey3,
+          data: makeMessage(publicKey3)});
+    const res = await axios.post('http://localhost:3000/claim/14', {
+      solAddress: 'foo-Address',
+      ethAddress: publicKey3,
+      signature: signature,
+    });
+    expect(res.data.ok).to.be.false;
+    expect(res.data.isVerified).to.be.false;
+    expect(res.data.isOwner).to.be.false;
+    expect(res.data.isApproved).to.be.false;
+  });
+
+  it('Should not verify invalid solAddress 2', async function() {
+    const signature = personalSign(
+        {privateKey: privateKey3,
+          data: makeMessage(publicKey3)});
+    const res = await axios.post('http://localhost:3000/claim/14', {
+      solAddress: publicKey3,
+      ethAddress: publicKey3,
+      signature: signature,
+    });
+    expect(res.data.ok).to.be.false;
+    expect(res.data.isVerified).to.be.false;
+    expect(res.data.isOwner).to.be.false;
+    expect(res.data.isApproved).to.be.false;
+  });
+
+  it('Should not verify invalid solAddress 3', async function() {
+    const signature = personalSign(
+        {privateKey: privateKey3,
+          data: makeMessage(publicKey3)});
+    const res = await axios.post('http://localhost:3000/claim/14', {
+      solAddress: "0x5faaf2315678afecb367f032d93f642f64180aa3",
+      ethAddress: publicKey3,
+      signature: signature,
+    });
+    expect(res.data.ok).to.be.false;
+    expect(res.data.isVerified).to.be.false;
     expect(res.data.isOwner).to.be.false;
     expect(res.data.isApproved).to.be.false;
   });
