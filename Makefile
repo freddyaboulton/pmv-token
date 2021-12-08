@@ -1,5 +1,5 @@
 install-sol:
-	cd pmv-sol && npm install
+	cd pmv-sol && npm install && cd app && npm install
 
 install-eth:
 	npm install
@@ -7,17 +7,23 @@ install-eth:
 .PHONY: install-deps
 install: install-eth install-sol
 
-test-sol:
-	cd pmv-sol && npm test
+build-sol:
+	cd pmv-sol && anchor build && cp target/idl/* app/idl/
+
+launch-app:
+	cd pmv-sol/app && env MY_WALLET=$$HOME/.config/solana/id.json node app.js &
+
+test-sol_: launch-app
+	cd pmv-sol && npm test && cd app && npm test
+
+test-sol: test-sol_
+	kill -9 $$(ps aux | grep '\snode\s' | awk '{print $$2}')
 
 build-eth:
 	cd pmv-eth && npx hardhat compile
 
 test-eth: build-eth
 	cd pmv-eth && npx hardhat test
-
-.PHONY: test
-test: test-eth
 
 lint-sol:
 	cd pmv-sol && npx eslint app

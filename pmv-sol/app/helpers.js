@@ -38,7 +38,7 @@ const programId = new anchor.web3.PublicKey(
 );
 
 const idl = JSON.parse(
-    require('fs').readFileSync('../target/idl/nft_candy_machine.json', 'utf8'),
+    require('fs').readFileSync('./idl/nft_candy_machine.json', 'utf8'),
 );
 
 export const program = new anchor.Program(idl, programId, provider);
