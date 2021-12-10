@@ -89,5 +89,5 @@ export async function mintToken(address, tokenIndex) {
           ),
         ],
       });
-  return tx;
+  return [tx, mint.publicKey.toString()];
 }

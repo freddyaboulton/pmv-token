@@ -45,7 +45,7 @@ describe('server-verify', function() {
         {privateKey: privateKey1,
           data: makeMessage()});
     const res = await axios.post('http://localhost:3000/claim', {
-      solAddress: '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5',
+      solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
       ethAddress: publicKey1,
       signature: signature,
       tokenIndex: 11},
@@ -70,6 +70,8 @@ describe('server-verify', function() {
     expect(res.data.isVerified).to.be.true;
     expect(res.data.isOwner).to.be.true;
     expect(res.data.isApproved).to.be.true;
+    expect(res.data.mintAddress).to.not.be.undefined;
+    expect(res.data.transaction).to.not.be.undefined;
   });
 
   it('Should correctly verify KeyPair2', async function() {
@@ -86,6 +88,8 @@ describe('server-verify', function() {
     expect(res.data.isVerified).to.be.true;
     expect(res.data.isOwner).to.be.true;
     expect(res.data.isApproved).to.be.true;
+    expect(res.data.mintAddress).to.not.be.undefined;
+    expect(res.data.transaction).to.not.be.undefined;
   });
 
   it('Should correctly verify KeyPair3', async function() {
@@ -102,6 +106,8 @@ describe('server-verify', function() {
     expect(res.data.isVerified).to.be.true;
     expect(res.data.isOwner).to.be.true;
     expect(res.data.isApproved).to.be.true;
+    expect(res.data.mintAddress).to.not.be.undefined;
+    expect(res.data.transaction).to.not.be.undefined;
   });
 
   it('Should correctly verify KeyPair4', async function() {
@@ -118,6 +124,8 @@ describe('server-verify', function() {
     expect(res.data.isVerified).to.be.true;
     expect(res.data.isOwner).to.be.true;
     expect(res.data.isApproved).to.be.true;
+    expect(res.data.mintAddress).to.not.be.undefined;
+    expect(res.data.transaction).to.not.be.undefined;
   });
 
   it('Should not verify publicKey1 with privateKey2', async function() {
