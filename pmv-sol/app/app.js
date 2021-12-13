@@ -43,9 +43,8 @@ app.post('/claim',
 
       if (isApproved) {
         try {
-          [tx, mintAddress] = await mintToken(req.body.solAddress,
-              req.params.tokenIndex);
-          isOk = true;
+          const [tx, mintAddress] = await mintToken(req.body.solAddress,
+              req.body.tokenIndex);
           status = 200;
           response = {'isVerified': isVerified, 'isOwner': isOwner,
             'isApproved': isApproved, 'transaction': tx,
