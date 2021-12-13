@@ -47,10 +47,14 @@ jobs:
         run: sh -c "$(curl -sSfL https://release.solana.com/v1.8.0/install)"
       - name: Make a Keypair
         run: /home/runner/.local/share/solana/install/active_release/bin/solana-keygen new
-      - name: Request SOL
-        run: /home/runner/.local/share/solana/install/active_release/bin/solana airdrop 5 --url devnet
-      - name: Request SOL Again
-        run: /home/runner/.local/share/solana/install/active_release/bin/solana airdrop 5 --url devnet
+      - name: Request SOL 1
+        run: /home/runner/.local/share/solana/install/active_release/bin/solana airdrop 2 --url devnet
+      - name: Request SOL 2
+        run: /home/runner/.local/share/solana/install/active_release/bin/solana airdrop 2 --url devnet
+      - name: Request SOL 3
+        run: /home/runner/.local/share/solana/install/active_release/bin/solana airdrop 2 --url devnet
+      - name: Request SOL 4
+        run: /home/runner/.local/share/solana/install/active_release/bin/solana airdrop 2 --url devnet
       - name: Run SOL unit tests
         run: make test-sol
       - name: Run SOL integration tests
