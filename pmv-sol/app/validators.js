@@ -9,7 +9,6 @@ import {ethers} from 'ethers';
  * @return {bool} If it is a valid SolAddress.
  */
 export function isValidSolAddress(address) {
-  console.log(address);
   let isValidSolAddress;
   try {
     const solAddress = new PublicKey(address);
@@ -31,10 +30,7 @@ export function isValidSolAddress(address) {
  * @return {bool} If it is a valid Eth address.
  */
 export function isValidEthAddress(address) {
-  console.log(address);
-  console.log(ethers.utils.isAddress(address));
   if (!ethers.utils.isAddress(address)) {
-    console.log('Here');
     throw new Error('Invalid Eth Address');
   }
   return true;

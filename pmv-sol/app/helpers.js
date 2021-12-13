@@ -19,7 +19,6 @@ import {ethers} from 'ethers';
 const parsed = JSON.parse(fs.readFileSync('./idl/PMV.json'));
 
 const ethProvider = new ethers.providers.JsonRpcProvider();
-console.log(process.env.ETH_PMV_ADDRESS);
 export const pmv = new ethers.Contract(process.env.ETH_PMV_ADDRESS,
     parsed.abi, ethProvider);
 
