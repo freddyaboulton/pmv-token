@@ -43,10 +43,12 @@ app.post('/claim',
 
       if (isApproved) {
         try {
-          await mintToken(req.body.solAddress, req.body.tokenIndex);
+          const [tx, mintAddress] = await mintToken(req.body.solAddress,
+              req.body.tokenIndex);
           status = 200;
           response = {'isVerified': isVerified, 'isOwner': isOwner,
-            'isApproved': isApproved};
+            'isApproved': isApproved, 'transaction': tx,
+            'mintAddress': mintAddress};
         } catch (e) {
           status = 400;
           response = {errors: [{'msg': 'Problem encountered during mint'}]};
