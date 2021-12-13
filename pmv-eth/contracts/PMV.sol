@@ -89,4 +89,8 @@ contract PMV is ERC721Enumerable, Ownable {
         root = _root;
     }
 
+    function withdraw() external onlyOwner {
+        payable(msg.sender).transfer(address(this).balance);
+    }
+
 }
