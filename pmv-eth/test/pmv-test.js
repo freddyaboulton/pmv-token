@@ -83,6 +83,7 @@ describe('PMV', function() {
       const newRoot = tree.getHexRoot();
       try {
         await pmv.connect(addr1).setRoot(newRoot);
+        expect(false).to.be.true;
       } catch (error) {
         expect(error.message).to.contain('caller is not the owner');
       }
@@ -428,6 +429,46 @@ describe('PMV', function() {
 
           for (let i = 1; i < 6; i++) {
             expect(await pmv.tokenURI(i)).to.equal('https://not-real-uri.com/');
+          }
+        });
+
+    it('Should let owner withdraw balance',
+        async function() {
+          await pmv.connect(owner).setSale(true);
+
+          await pmv.connect(addr7).mint(10, {
+            value: ethers.BigNumber.from('200000000000000000'),
+          });
+          expect(await pmv.balanceOf(addr7.address)).to.equal(10);
+
+          await pmv.connect(addr1).mint(10, {
+            value: ethers.BigNumber.from('200000000000000000'),
+          });
+          expect(await pmv.balanceOf(addr1.address)).to.equal(10);
+
+          await pmv.connect(addr2).mint(7, {
+            value: ethers.BigNumber.from('140000000000000000'),
+          });
+          expect(await pmv.balanceOf(addr2.address)).to.equal(7);
+
+          const tx = await pmv.connect(owner).withdraw();
+          const expectedAmount = ethers.BigNumber.from('540000000000000000');
+          expect(tx).to.changeEtherBalance(owner, expectedAmount);
+        });
+
+    it('Should not let non-owner withdraw balance',
+        async function() {
+          await pmv.connect(owner).setSale(true);
+
+          await pmv.connect(addr7).mint(10, {
+            value: ethers.BigNumber.from('200000000000000000'),
+          });
+
+          try {
+            await pmv.connect(addr3).withdraw();
+            expect(false).to.be.true;
+          } catch (error) {
+            expect(error.message).to.contain('caller is not the owner');
           }
         });
   });
