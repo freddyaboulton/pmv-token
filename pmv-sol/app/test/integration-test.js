@@ -61,7 +61,7 @@ describe('server-verify', function() {
         {privateKey: privateKey1,
           data: makeMessage()});
     const res = await axios.post('http://localhost:3000/claim', {
-      solAddress: '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5',
+      solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
       ethAddress: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
       signature: signature,
       tokenIndex: 12},
@@ -79,7 +79,7 @@ describe('server-verify', function() {
         {privateKey: privateKey2,
           data: makeMessage()});
     const res = await axios.post('http://localhost:3000/claim', {
-      solAddress: '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5',
+      solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
       ethAddress: publicKey2,
       signature: signature,
       tokenIndex: 6,
@@ -115,7 +115,7 @@ describe('server-verify', function() {
         {privateKey: privateKey4,
           data: makeMessage()});
     const res = await axios.post('http://localhost:3000/claim', {
-      solAddress: '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5',
+      solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
       ethAddress: publicKey4,
       signature: signature,
       tokenIndex: 16,
