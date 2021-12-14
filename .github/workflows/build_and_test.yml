@@ -32,7 +32,7 @@ jobs:
       ETH_PROVIDER: http://localhost:8545
       SOL_PROVIDER: https://api.devnet.solana.com/
       SOL_PMV_ADDRESS: '2MvgrbsWoramiYaBBE9pqhXcg72ByZvbMJCNDbrekvHV'
-      MY_WALLET: $HOME/.config/solana/id.json
+      MY_WALLET: ~/.config/solana/id.json
     steps:
       - name: Set up Node 14
         uses: actions/setup-node@v2
