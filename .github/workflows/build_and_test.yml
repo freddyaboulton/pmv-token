@@ -32,7 +32,6 @@ jobs:
       ETH_PROVIDER: http://localhost:8545
       SOL_PROVIDER: https://api.devnet.solana.com/
       SOL_PMV_ADDRESS: '2MvgrbsWoramiYaBBE9pqhXcg72ByZvbMJCNDbrekvHV'
-      MY_WALLET: "${{ GITHUB_WORKSPACE }}/.config/solana/id.json"
     steps:
       - name: Set up Node 14
         uses: actions/setup-node@v2
@@ -61,7 +60,10 @@ jobs:
       - name: Run SOL unit tests
         run: make test-sol
       - name: Run SOL integration tests
-        run: make test-sol-integration
+        run: |
+        export MY_WALLET=$HOME/.config/solana/id.json
+        echo $MY_WALLET
+        make test-sol-integration
   lint:
     runs-on: ubuntu-latest
     steps:
