@@ -12,29 +12,24 @@ import {
 import {
   TOKEN_METADATA_PROGRAM_ID, TOKEN_PROGRAM_ID,
   SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
-  CANDY_MACHINE, CONFIG_ARRAY_START, CONFIG, AUTHORITY, UUID,
+  CANDY_MACHINE, CONFIG_ARRAY_START, AUTHORITY,
+  walletWrapper, myWallet,
 } from './constants.js';
 import {ethers} from 'ethers';
 
 const parsed = JSON.parse(fs.readFileSync('./idl/PMV.json'));
 
-const ethProvider = new ethers.providers.JsonRpcProvider();
+const ethProvider = new ethers.providers.JsonRpcProvider(
+    process.env.ETH_PROVIDER);
 export const pmv = new ethers.Contract(process.env.ETH_PMV_ADDRESS,
     parsed.abi, ethProvider);
 
 
 const connection = new anchor.web3.Connection(
-    'https://api.devnet.solana.com/',
+    process.env.SOL_PROVIDER,
     'recent',
 );
 
-export const myWallet = anchor.web3.Keypair.fromSecretKey(
-    new Uint8Array(
-        JSON.parse(fs.readFileSync(process.env.MY_WALLET, 'utf8')),
-    ),
-);
-
-const walletWrapper = new anchor.Wallet(myWallet);
 
 export const provider = new anchor.Provider(connection, walletWrapper, {
   preflightCommitment: 'recent',
@@ -42,7 +37,7 @@ export const provider = new anchor.Provider(connection, walletWrapper, {
 
 // Address of the deployed program.
 const programId = new anchor.web3.PublicKey(
-    '2MvgrbsWoramiYaBBE9pqhXcg72ByZvbMJCNDbrekvHV',
+    process.env.SOL_PMV_ADDRESS,
 );
 
 const idl = JSON.parse(
@@ -204,35 +199,37 @@ export function createAssociatedTokenAccountInstruction(
 
 /**
  * Initialize the contract.
+ * @param {KeyPair} configKeyPair - Anchor keypair for the config account.
+ * @param {string} uuid - UUID for the candy machine.
  */
-export async function initialize() {
-  const txInstr = await createConfig(CONFIG, AUTHORITY, UUID, false, 10);
+export async function initialize(configKeyPair, uuid) {
+  const txInstr = await createConfig(configKeyPair, AUTHORITY, uuid, false, 10);
   const [candyMachine, bump] = await getCandyMachine(
-      CONFIG.publicKey,
-      UUID,
+      configKeyPair.publicKey,
+      uuid,
   );
 
   await program.rpc.initializeCandyMachine(
       bump,
       {
-        uuid: UUID,
+        uuid: uuid,
         price: new anchor.BN(0),
       },
       {
         accounts: {
           candyMachine,
           wallet: myWallet.publicKey,
-          config: CONFIG.publicKey,
+          config: configKeyPair.publicKey,
           authority: AUTHORITY.publicKey,
           payer: myWallet.publicKey,
           systemProgram: anchor.web3.SystemProgram.programId,
           rent: anchor.web3.SYSVAR_RENT_PUBKEY,
         },
-        signers: [myWallet, AUTHORITY, CONFIG],
+        signers: [myWallet, AUTHORITY, configKeyPair],
         instructions: [
           anchor.web3.SystemProgram.createAccount({
             fromPubkey: myWallet.publicKey,
-            newAccountPubkey: CONFIG.publicKey,
+            newAccountPubkey: configKeyPair.publicKey,
             space: CONFIG_ARRAY_START + 4 + 4 + 2,
             lamports:
                     await provider.connection.getMinimumBalanceForRentExemption(

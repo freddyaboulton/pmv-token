@@ -1,5 +1,5 @@
 import express from 'express';
-import {initialize, pmv} from './helpers.js';
+import {pmv} from './helpers.js';
 import {mintToken} from './claim.js';
 import {verify} from './verify.js';
 import {isValidSolAddress, isValidEthAddress} from './validators.js';
@@ -12,9 +12,6 @@ app.use(express.json());
 const port = 3000;
 
 app.use(express.urlencoded({extended: true}));
-
-
-await initialize();
 
 app.get('/', function(req, res) {
   res.send('Hello World!');
