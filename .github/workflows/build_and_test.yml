@@ -61,8 +61,8 @@ jobs:
         run: make test-sol
       - name: Run SOL integration tests
         run: |
-        export MY_WALLET="$HOME/.config/solana/id.json"
-        echo "$MY_WALLET"
+        echo "MY_WALLET=$HOME/.config/solana/id.json" >> $GITHUB_ENV
+        echo $MY_WALLET
         make test-sol-integration
   lint:
     runs-on: ubuntu-latest
