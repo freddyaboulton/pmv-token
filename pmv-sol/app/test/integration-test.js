@@ -118,7 +118,7 @@ describe('server-verify', function() {
       solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
       ethAddress: publicKey4,
       signature: signature,
-      tokenIndex: 16,
+      tokenIndex: 20,
     });
     expect(res.status).to.equal(200);
     expect(res.data.isVerified).to.be.true;
@@ -250,6 +250,38 @@ describe('server-verify', function() {
     expect(res.status).to.equal(422);
     expect(res.data.errors.length).to.equal(1);
     expect(res.data.errors[0].msg).to.equal('Invalid Token Index');
+  });
+
+  it('Should not verify tokenIndex not minted', async function() {
+    const signature = personalSign(
+        {privateKey: privateKey3,
+          data: makeMessage()});
+    const res = await axios.post('http://localhost:3000/claim', {
+      solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
+      ethAddress: publicKey3,
+      signature: signature,
+      tokenIndex: 21,
+    });
+    expect(res.status).to.equal(422);
+    expect(res.data.errors.length).to.equal(1);
+    const msg = '21 has not been minted yet.';
+    expect(res.data.errors[0].msg).to.equal(msg);
+  });
+
+  it('Should not verify tokenIndex not minted 50', async function() {
+    const signature = personalSign(
+        {privateKey: privateKey3,
+          data: makeMessage()});
+    const res = await axios.post('http://localhost:3000/claim', {
+      solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
+      ethAddress: publicKey3,
+      signature: signature,
+      tokenIndex: 50,
+    });
+    expect(res.status).to.equal(422);
+    expect(res.data.errors.length).to.equal(1);
+    const msg = '50 has not been minted yet.';
+    expect(res.data.errors[0].msg).to.equal(msg);
   });
 
   it('Should not verify zero tokenIndex', async function() {

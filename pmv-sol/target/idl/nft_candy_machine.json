@@ -405,6 +405,11 @@
       "code": 313,
       "name": "ConfigLineMismatch",
       "msg": "Number of config lines must be at least number of items available"
+    },
+    {
+      "code": 314,
+      "name": "MustBeAuthority",
+      "msg": "Must be authority to mint"
     }
   ]
 }

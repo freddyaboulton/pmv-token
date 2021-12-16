@@ -28,6 +28,11 @@ app.post('/claim',
         return res.status(422).json({errors: errors.array()});
       }
 
+      if (req.body.tokenIndex > await pmv.totalSupply()) {
+        const msg = `${req.body.tokenIndex} has not been minted yet.`;
+        return res.status(422).json({errors: [{'msg': msg}]});
+      }
+
       let status;
       let response;
 
