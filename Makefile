@@ -11,7 +11,7 @@ build-sol:
 	cd pmv-sol && anchor build && cp target/idl/* app/idl/
 
 launch-app:
-	cd pmv-sol/app && env MY_WALLET=$$HOME/.config/solana/id.json node -r dotenv/config app.js &
+	cd pmv-sol/app && node -r dotenv/config initialize-sol-contract.js && node -r dotenv/config app.js &
 
 launch-node:
 	cd pmv-eth && npx hardhat node &
@@ -23,7 +23,7 @@ test-sol:
 	cd pmv-sol && npm test
 
 test-sol-integration_: deploy-pmv-test launch-app
-	sleep 4 && cd pmv-sol/app && npm test
+	sleep 10 && cd pmv-sol/app && npm test
 
 test-sol-integration: test-sol-integration_
 	kill -9 $$(ps aux | grep '\snode\s' | awk '{print $$2}')

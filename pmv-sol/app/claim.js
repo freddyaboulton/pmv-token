@@ -28,7 +28,7 @@ export async function mintToken(address, tokenIndex) {
   const metadata = await getMetadata(mint.publicKey);
   const masterEdition = await getMasterEdition(mint.publicKey);
   const [candyMachine] = await getCandyMachine(
-      CONFIG.publicKey,
+      CONFIG,
       UUID,
   );
   const [claimStatus, bump] = await findClaimStatusKey(tokenIndex,
@@ -38,7 +38,7 @@ export async function mintToken(address, tokenIndex) {
       new anchor.BN(tokenIndex),
       {
         accounts: {
-          config: CONFIG.publicKey,
+          config: CONFIG,
           candyMachine: candyMachine,
           claimStatus: claimStatus,
           payer: AUTHORITY.publicKey,
