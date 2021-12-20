@@ -83,7 +83,8 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
      * @dev See {IERC721-ownerOf}.
      */
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
-        address owner = _owners[tokenId];
+        require(tokenId > 0, "tokenId must be positive");
+        address owner = _owners[tokenId - 1];
         require(owner != address(0), "ERC721: owner query for nonexistent token");
         return owner;
     }

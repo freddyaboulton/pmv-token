@@ -190,7 +190,11 @@ describe('PMVOptimized', function() {
             value: ethers.BigNumber.from('20000000000000000'),
           });
           expect(await pmv.balanceOf(addr1.address)).to.equal(2);
+          expect(await pmv.ownerOf(1)).to.equal(addr1.address);
+          expect(await pmv.ownerOf(2)).to.equal(addr1.address);
           expect(await pmv.balanceOf(addr2.address)).to.equal(1);
+          expect(await pmv.ownerOf(3)).to.equal(addr2.address);
+
           amount = await pmv.provider.getBalance(pmv.address);
           expect(amount).to.equal('60000000000000000');
 
@@ -211,6 +215,9 @@ describe('PMVOptimized', function() {
             value: ethers.BigNumber.from('20000000000000000'),
           });
           expect(await pmv.balanceOf(addr3.address)).to.equal(3);
+          for (let i = 1; i < 4; i++) {
+            expect(await pmv.ownerOf(i)).to.equal(addr3.address);
+          }
         });
 
     it('Should show right metadata after reveal',
@@ -317,16 +324,19 @@ describe('PMVOptimized', function() {
             value: ethers.BigNumber.from('200000000000000000'),
           });
           expect(await pmv.balanceOf(addr7.address)).to.equal(10);
+          expect(await pmv.ownerOf(9)).to.equal(addr7.address);
 
           await pmv.connect(addr1).mint(10, {
             value: ethers.BigNumber.from('200000000000000000'),
           });
           expect(await pmv.balanceOf(addr1.address)).to.equal(10);
+          expect(await pmv.ownerOf(17)).to.equal(addr1.address);
 
           await pmv.connect(addr2).mint(7, {
             value: ethers.BigNumber.from('140000000000000000'),
           });
           expect(await pmv.balanceOf(addr2.address)).to.equal(7);
+          expect(await pmv.ownerOf(24)).to.equal(addr2.address);
 
           try {
             await pmv.connect(addr6).mint(5, {
@@ -355,6 +365,7 @@ describe('PMVOptimized', function() {
             value: ethers.BigNumber.from('20000000000000000'),
           });
           expect(await pmv.balanceOf(addr3.address)).to.equal(1);
+          expect(await pmv.ownerOf(30)).to.equal(addr3.address);
 
           maxSupply = await pmv.connect(owner).maxSupply();
           for (let i = 1; i < maxSupply; i++) {
@@ -365,6 +376,8 @@ describe('PMVOptimized', function() {
           for (let i = 1; i < maxSupply; i++) {
             expect(await pmv.tokenURI(i)).to.equal(`https://the-real-doman.org/${i}`);
           }
+
+          expect(await pmv.totalSupply()).to.equal(maxSupply);
         });
 
     it('Should not let users mint more than maxPerWallet',
