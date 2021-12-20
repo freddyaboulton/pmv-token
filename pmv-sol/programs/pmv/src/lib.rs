@@ -13,7 +13,7 @@ use {
     },
     spl_token::state::Mint,
 };
-anchor_lang::declare_id!("2MvgrbsWoramiYaBBE9pqhXcg72ByZvbMJCNDbrekvHV");
+anchor_lang::declare_id!("kdWSoo9pFXoPC1mnn69VsNBvf3ySC2U5NeBzTZm4cax");
 
 const PREFIX: &str = "candy_machine";
 #[program]
@@ -34,6 +34,10 @@ pub mod nft_candy_machine {
         let config = &ctx.accounts.config;
         let claim_status = &mut ctx.accounts.claim_status;
 
+        if *ctx.accounts.payer.key != candy_machine.authority {
+            return Err(ErrorCode::MustBeAuthority.into());
+        }
+      
         if let Some(mint) = candy_machine.token_mint {
             let token_account_info = &ctx.remaining_accounts[0];
             let transfer_authority_info = &ctx.remaining_accounts[1];
@@ -455,4 +459,6 @@ pub enum ErrorCode {
     CandyMachineNotLiveYet,
     #[msg("Number of config lines must be at least number of items available")]
     ConfigLineMismatch,
+    #[msg("Must be authority to mint")]
+    MustBeAuthority,
 }

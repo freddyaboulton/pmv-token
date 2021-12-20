@@ -106,7 +106,7 @@ describe("nft-candy-machine", function () {
 
   // Address of the deployed program.
   const programId = new anchor.web3.PublicKey(
-    "2MvgrbsWoramiYaBBE9pqhXcg72ByZvbMJCNDbrekvHV"
+    "kdWSoo9pFXoPC1mnn69VsNBvf3ySC2U5NeBzTZm4cax"
   );
 
   const walletWrapper = new anchor.Wallet(myWallet);
@@ -284,8 +284,8 @@ describe("nft-candy-machine", function () {
       assert.equal(machine.tokenMint, null);
     });
 
-    it("mints 5x to account not authority", async function () {
-      for (let i = 1; i < 6; i++) {
+    it("mints 2x to account not authority", async function () {
+      for (let i = 1; i < 3; i++) {
         const mint = anchor.web3.Keypair.generate();
         const token = await getTokenWallet(
           myWallet.publicKey,
@@ -366,13 +366,13 @@ describe("nft-candy-machine", function () {
           const status = await program.account.claimStatus.fetch(key);
           assert(status.isClaimed === true);
         } catch (e) {
-          if (i != 5) {
+          if (i != 2) {
             console.log("Failure at ", i, e);
             throw e;
           }
         }
 
-        if (i != 5) {
+        if (i != 2) {
           const metadataAccount = await connection.getAccountInfo(metadata);
           assert.ok(metadataAccount.data.length > 0);
           const masterEditionAccount = await connection.getAccountInfo(
@@ -527,7 +527,89 @@ describe("nft-candy-machine", function () {
         );
       }
     });
+  
+  it("Does not allow non authority to mint", async function () {
+      const mint = anchor.web3.Keypair.generate();
+      const nonAuthority = anchor.web3.Keypair.generate();
+      const token = await getTokenWallet(
+        nonAuthority.publicKey,
+        mint.publicKey
+      );
+      const metadata = await getMetadata(mint.publicKey);
+      const masterEdition = await getMasterEdition(mint.publicKey);
+      const [candyMachine, _] = await getCandyMachine(
+        this.config.publicKey,
+        this.candyMachineUuid
+      );
+      const [claimStatus, bump] = await findClaimStatusKey(8, candyMachine);
+      try {
+        const tx = await program.rpc.mintNft(
+          new anchor.BN(bump),
+          new anchor.BN(8),
+          {
+            accounts: {
+              config: this.config.publicKey,
+              candyMachine: candyMachine,
+              claimStatus: claimStatus,
+              payer: nonAuthority.publicKey,
+              wallet: myWallet.publicKey,
+              mint: mint.publicKey,
+              metadata: metadata,
+              masterEdition: masterEdition,
+              mintAuthority: nonAuthority.publicKey,
+              updateAuthority: nonAuthority.publicKey,
+              tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+              tokenProgram: TOKEN_PROGRAM_ID,
+              systemProgram: SystemProgram.programId,
+              rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+              clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+            },
+            signers: [mint, nonAuthority, myWallet],
+            instructions: [
+              anchor.web3.SystemProgram.transfer({
+                fromPubkey: myWallet.publicKey,
+                toPubkey: nonAuthority.publicKey,
+                lamports: 1000000000 + 10000000, // add minting fees in there
+              }),
+              anchor.web3.SystemProgram.createAccount({
+                fromPubkey: nonAuthority.publicKey,
+                newAccountPubkey: mint.publicKey,
+                space: MintLayout.span,
+                lamports:
+                  await provider.connection.getMinimumBalanceForRentExemption(
+                    MintLayout.span
+                  ),
+                programId: TOKEN_PROGRAM_ID,
+              }),
+              Token.createInitMintInstruction(
+                TOKEN_PROGRAM_ID,
+                mint.publicKey,
+                0,
+                nonAuthority.publicKey,
+                nonAuthority.publicKey
+              ),
+              createAssociatedTokenAccountInstruction(
+                token,
+                nonAuthority.publicKey,
+                nonAuthority.publicKey,
+                mint.publicKey
+              ),
+              Token.createMintToInstruction(
+                TOKEN_PROGRAM_ID,
+                mint.publicKey,
+                token,
+                nonAuthority.publicKey,
+                [],
+                1
+              ),
+            ]
+          });
+        }  catch (e) {
+          const err = e as SendTransactionError;
+          expect(err.message).to.have.string(
+            "Must be authority to mint"
+          );
+        }
+    });
   });
 });
-
-
