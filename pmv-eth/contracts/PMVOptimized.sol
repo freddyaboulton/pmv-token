@@ -37,7 +37,7 @@ contract PMVOptimized is ERC721Optimized, Ownable {
         require(tokenQuantity * salePrice == msg.value, "INCORRECT PAYMENT AMOUNT");
         
         for(uint256 i = 0; i < tokenQuantity; i++) {
-            _safeMint(msg.sender, totalSupply() + 1);
+            _safeMint(msg.sender, totalNonBurnedSupply() + 1);
         }  
         
         presaleMints[msg.sender] += tokenQuantity;      
@@ -51,7 +51,7 @@ contract PMVOptimized is ERC721Optimized, Ownable {
         require(tokenQuantity * salePrice <= msg.value, "INCORRECT PAYMENT AMOUNT");
 
         for(uint256 i = 0; i < tokenQuantity; i++) {
-            _safeMint(msg.sender, totalSupply() + 1);
+            _safeMint(msg.sender, totalNonBurnedSupply() + 1);
         }
 
         mints[msg.sender] += tokenQuantity;
