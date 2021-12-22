@@ -43,7 +43,7 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
     // Array with all token ids, used for enumeration
     uint256[] private _allTokens;
 
-    uint256[] private _burned;
+    uint256 private _numBurned;
 
     // Mapping from token id to position in the allTokens array
     mapping(uint256 => uint256) private _allTokensIndex;
@@ -463,7 +463,7 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
      * @dev See {IERC721Enumerable-totalSupply}.
      */
     function totalSupply() public view virtual override returns (uint256) {
-        return _owners.length - _burned.length;
+        return _owners.length - _numBurned;
     }
 
     /**
@@ -479,13 +479,15 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
     function tokenByIndex(uint256 index) public view virtual override returns (uint256) {
         require(index < ERC721Optimized.totalSupply(), "ERC721Enumerable: global index out of bounds");
         uint256 count;
-        // When a tokens is burned, the index of all tokens above that index
+
+        // When a token is burned, the index of all tokens above that index
         // should be shifted by 1 to the left. Since we do not pop entries of _owners, we need
         // to add back the missing shift.
-        for(uint i = 0; i < _burned.length; i++ ){
-            if(_burned[i] <= index + 1) count += 1;
+        for(uint i = 0; i < _owners.length; i++ ){
+            if(_owners[i] == address(0)) count += 1;
+            if(int(i) - int(count) == int(index)) return uint256(i) + 1;
         }
-        return index + 1 + count;
+        require(false, "ERC721Enumerable: index not found");
     }
 
     /**
@@ -553,6 +555,6 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
      * @param tokenId uint256 ID of the token to be removed from the tokens list
      */
     function _removeTokenFromAllTokensEnumeration(uint256 tokenId) private {
-        _burned.push(tokenId);
+        _numBurned += 1;
     }
 }
