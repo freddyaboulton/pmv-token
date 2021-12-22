@@ -7,6 +7,7 @@ import "./ERC721Optimized.sol";
 /**
  * @title ERC721Mock
  * This mock just provides a public safeMint, mint, and burn functions for testing purposes
+ * The mint method follows the logic of the PMV mint function so this contract should behave
  */
 contract ERC721EnumerableMock is ERC721Optimized {
     string private _baseTokenURI;

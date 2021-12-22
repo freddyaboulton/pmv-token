@@ -83,11 +83,8 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
      * @dev See {IERC721-ownerOf}.
      */
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
-        require(tokenId > 0, "tokenId must be positive");
-        require(tokenId < totalNonBurnedSupply() + 1, "ERC721: owner query for nonexistent token");
-        address owner = _owners[tokenId - 1];
-        require(owner != address(0), "ERC721: owner query for nonexistent token");
-        return owner;
+        require(_exists(tokenId), "ERC721: owner query for nonexistent token");
+        return _owners[tokenId - 1];
     }
 
     /**
@@ -236,9 +233,15 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
      * and stop existing when they are burned (`_burn`).
      */
     function _exists(uint256 tokenId) internal view virtual returns (bool) {
-        //if (tokenId >= _owners.length + 1) return false;
-        //else return _owners[tokenId - 1] == address(0);
-        return tokenId < _owners.length + 1;
+        bool positive = tokenId > 0;
+        bool inBounds = tokenId < totalNonBurnedSupply() + 1;
+        bool notBurned = true;
+        // if 1 <= tokenId <= 10,000 need to make sure it wasn't burned.
+        if (inBounds){
+            address owner = _owners[tokenId - 1];
+            notBurned = owner != address(0);
+        }
+        return positive && inBounds && notBurned;
     }
 
     /**
@@ -476,6 +479,9 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
     function tokenByIndex(uint256 index) public view virtual override returns (uint256) {
         require(index < ERC721Optimized.totalSupply(), "ERC721Enumerable: global index out of bounds");
         uint256 count;
+        // When a tokens is burned, the index of all tokens above that index
+        // should be shifted by 1 to the left. Since we do not pop entries of _owners, we need
+        // to add back the missing shift.
         for(uint i = 0; i < _burned.length; i++ ){
             if(_burned[i] <= index + 1) count += 1;
         }
@@ -521,9 +527,6 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
      * @param tokenId uint256 ID of the token to be added to the tokens list of the given address
      */
     function _addTokenToOwnerEnumeration(address to, uint256 tokenId) private {
-        // uint256 length = ERC721Optimized.balanceOf(to);
-        // _ownedTokens[to][length] = tokenId;
-        // _ownedTokensIndex[tokenId] = length;
     }
 
     /**
@@ -531,8 +534,6 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
      * @param tokenId uint256 ID of the token to be added to the tokens list
      */
     function _addTokenToAllTokensEnumeration(uint256 tokenId) private {
-        // _allTokensIndex[tokenId] = _allTokens.length;
-        // _allTokens.push(tokenId);
     }
 
     /**
@@ -544,23 +545,6 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
      * @param tokenId uint256 ID of the token to be removed from the tokens list of the given address
      */
     function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId) private {
-        // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and
-        // then delete the last slot (swap and pop).
-
-        // uint256 lastTokenIndex = ERC721Optimized.balanceOf(from) - 1;
-        // uint256 tokenIndex = _ownedTokensIndex[tokenId];
-
-        // // When the token to delete is the last token, the swap operation is unnecessary
-        // if (tokenIndex != lastTokenIndex) {
-        //     uint256 lastTokenId = _ownedTokens[from][lastTokenIndex];
-
-        //     _ownedTokens[from][tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
-        //     _ownedTokensIndex[lastTokenId] = tokenIndex; // Update the moved token's index
-        // }
-
-        // // This also deletes the contents at the last position of the array
-        // delete _ownedTokensIndex[tokenId];
-        // delete _ownedTokens[from][lastTokenIndex];
     }
 
     /**
@@ -569,24 +553,6 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
      * @param tokenId uint256 ID of the token to be removed from the tokens list
      */
     function _removeTokenFromAllTokensEnumeration(uint256 tokenId) private {
-        // To prevent a gap in the tokens array, we store the last token in the index of the token to delete, and
-        // then delete the last slot (swap and pop).
-
-
-        // uint256 lastTokenIndex = _owners.length - 1;
-        // uint256 tokenIndex = _allTokensIndex[tokenId];
-
-        // // // When the token to delete is the last token, the swap operation is unnecessary. However, since this occurs so
-        // // // rarely (when the last minted token is burnt) that we still do the swap here to avoid the gas cost of adding
-        // // // an 'if' statement (like in _removeTokenFromOwnerEnumeration)
-        // uint256 lastTokenId = _allTokens[lastTokenIndex];
-
-        // _allTokens[tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
-        // _allTokensIndex[lastTokenId] = tokenIndex; // Update the moved token's index
-
-        // // This also deletes the contents at the last position of the array
-        // delete _allTokensIndex[tokenId];
-        // _allTokens.pop();
         _burned.push(tokenId);
     }
 }

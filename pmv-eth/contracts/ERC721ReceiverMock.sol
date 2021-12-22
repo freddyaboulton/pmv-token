@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
+// Mock contract used for OpenZellin unit tests
 contract ERC721ReceiverMock is IERC721Receiver {
     enum Error {
         None,
