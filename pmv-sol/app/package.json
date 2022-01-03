@@ -14,11 +14,12 @@
   },
   "scripts": {
     "run": "env MY_WALLET=$HOME/.config/solana/id.json node -r dotenv/config app.js",
-    "test": "mocha  --timeout 1000000"
+    "test": "mocha -r dotenv/config --timeout 1000000"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@metaplex/js": "^4.1.0",
     "mocha": "^9.1.3"
   }
 }
