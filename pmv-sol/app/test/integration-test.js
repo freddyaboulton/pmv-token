@@ -54,6 +54,9 @@ describe('server-verify', function() {
     expect(res.data.isVerified).to.be.true;
     expect(res.data.isOwner).to.be.true;
     expect(res.data.isApproved).to.be.true;
+
+    const verifiedRes = await axios.get('http://localhost:3000/claim/11');
+    expect(verifiedRes.data.isClaimed).to.be.true;
   });
 
   it('Should correctly verify checksummed KeyPair1', async function() {
@@ -72,6 +75,9 @@ describe('server-verify', function() {
     expect(res.data.isApproved).to.be.true;
     expect(res.data.mintAddress).to.not.be.undefined;
     expect(res.data.transaction).to.not.be.undefined;
+
+    const verifiedRes = await axios.get('http://localhost:3000/claim/12');
+    expect(verifiedRes.data.isClaimed).to.be.true;
   });
 
   it('Should correctly verify KeyPair2', async function() {
@@ -90,6 +96,9 @@ describe('server-verify', function() {
     expect(res.data.isApproved).to.be.true;
     expect(res.data.mintAddress).to.not.be.undefined;
     expect(res.data.transaction).to.not.be.undefined;
+
+    const verifiedRes = await axios.get('http://localhost:3000/claim/6');
+    expect(verifiedRes.data.isClaimed).to.be.true;
   });
 
   it('Should correctly verify KeyPair3', async function() {
@@ -108,6 +117,9 @@ describe('server-verify', function() {
     expect(res.data.isApproved).to.be.true;
     expect(res.data.mintAddress).to.not.be.undefined;
     expect(res.data.transaction).to.not.be.undefined;
+
+    const verifiedRes = await axios.get('http://localhost:3000/claim/1');
+    expect(verifiedRes.data.isClaimed).to.be.true;
   });
 
   it('Should correctly verify KeyPair4', async function() {
@@ -126,6 +138,9 @@ describe('server-verify', function() {
     expect(res.data.isApproved).to.be.true;
     expect(res.data.mintAddress).to.not.be.undefined;
     expect(res.data.transaction).to.not.be.undefined;
+
+    const verifiedRes = await axios.get('http://localhost:3000/claim/20');
+    expect(verifiedRes.data.isClaimed).to.be.true;
   });
 
   it('Should not verify publicKey1 with privateKey2', async function() {
@@ -328,4 +343,38 @@ describe('server-verify', function() {
     expect(res.data.errors.length).to.equal(1);
     expect(res.data.errors[0].msg).to.equal('Invalid Token Index');
   });
+
+  it('Should not verify negative tokenIndex for get', async function() {
+    const res = await axios.get('http://localhost:3000/claim/-1');
+    expect(res.status).to.equal(422);
+    expect(res.data.errors.length).to.equal(1);
+    expect(res.data.errors[0].msg).to.equal('Invalid Token Index');
+  });
+
+  it('Should not verify zero tokenIndex for get', async function() {
+    const res = await axios.get('http://localhost:3000/claim/0');
+    expect(res.status).to.equal(422);
+    expect(res.data.errors.length).to.equal(1);
+    expect(res.data.errors[0].msg).to.equal('Invalid Token Index');
+  });
+
+  it('Should not verify tokenIndex > 10,000 for get', async function() {
+    const res = await axios.get('http://localhost:3000/claim/10001');
+    expect(res.status).to.equal(422);
+    expect(res.data.errors.length).to.equal(1);
+    expect(res.data.errors[0].msg).to.equal('Invalid Token Index');
+  });
+
+  it('Should not verify float tokenIndex for get', async function() {
+    const res = await axios.get('http://localhost:3000/claim/3.14');
+    expect(res.status).to.equal(422);
+    expect(res.data.errors.length).to.equal(1);
+    expect(res.data.errors[0].msg).to.equal('Invalid Token Index');
+  });
+
+  it('Should correctly display tokenIndex that has not been claimed',
+      async function() {
+        const res = await axios.get('http://localhost:3000/claim/21');
+        expect(res.data.isClaimed).to.be.false;
+      });
 });

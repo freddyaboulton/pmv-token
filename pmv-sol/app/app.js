@@ -1,9 +1,9 @@
 import express from 'express';
 import {pmv} from './helpers.js';
-import {mintToken} from './claim.js';
+import {mintToken, isClaimed} from './claim.js';
 import {verify} from './verify.js';
 import {isValidSolAddress, isValidEthAddress} from './validators.js';
-import {body, validationResult} from 'express-validator';
+import {body, validationResult, param} from 'express-validator';
 import {ethers} from 'ethers';
 
 
@@ -16,6 +16,18 @@ app.use(express.urlencoded({extended: true}));
 app.get('/', function(req, res) {
   res.send('Hello World!');
 });
+
+app.get('/claim/:tokenIndex',
+    param('tokenIndex').isInt({lt: 10001, gt: 0})
+        .withMessage('Invalid Token Index'),
+    async function(req, res) {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(422).json({errors: errors.array()});
+      }
+      res.status(200).json({
+        'isClaimed': await isClaimed(req.params.tokenIndex)});
+    });
 
 app.post('/claim',
     body('tokenIndex').isInt({lt: 10001, gt: 0})
