@@ -91,3 +91,23 @@ export async function mintToken(address, tokenIndex) {
       });
   return [tx, mint.publicKey.toString()];
 }
+
+
+/**
+ * Verify if tokenIndex has been claimed
+ * @param {int} tokenIndex - Max allowed to mint.
+ * @return {bool} {isClaimed: bool}.
+ */
+export async function isClaimed(tokenIndex) {
+  const [candyMachine] = await getCandyMachine(
+      CONFIG,
+      UUID,
+  );
+  const [key] = await findClaimStatusKey(tokenIndex, candyMachine);
+  const status = await program.account.claimStatus.fetchNullable(key);
+  if (status == null) {
+    return false;
+  } else {
+    return status.isClaimed;
+  }
+}
