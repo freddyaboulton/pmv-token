@@ -112,7 +112,7 @@ const createConfig = async function(
       {
         uuid: uuid,
         symbol: 'PMV',
-        isMutable: true,
+        isMutable: false,
         maxSupply: new anchor.BN(0),
         retain_autority: retainAuthority,
         uri: 'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/',

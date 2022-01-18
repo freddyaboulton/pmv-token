@@ -2,6 +2,8 @@ import {expect} from 'chai';
 import {makeMessage} from '../verify.js';
 import {personalSign} from '@metamask/eth-sig-util';
 import axios from 'axios';
+import * as metaplex from '@metaplex/js';
+import * as web3 from '@solana/web3.js';
 
 axios.defaults.validateStatus = function() {
   return true;
@@ -116,6 +118,19 @@ describe('server-verify', function() {
     expect(res.data.isOwner).to.be.true;
     expect(res.data.isApproved).to.be.true;
     expect(res.data.mintAddress).to.not.be.undefined;
+    const connection = new web3.Connection(
+        web3.clusterApiUrl('devnet'),
+        'recent',
+    );
+    const metadataPDA = await metaplex.programs.metadata.Metadata.getPDA(
+        res.data.mintAddress,
+    );
+    const mintAccInfo = await connection.getAccountInfo(
+        metadataPDA);
+    const metadata = metaplex.programs.metadata.Metadata.from(
+        new metaplex.Account(res.data.mintAddress, mintAccInfo),
+    );
+    expect(metadata.data.isMutable).to.equal(0);
     expect(res.data.transaction).to.not.be.undefined;
 
     const verifiedRes = await axios.get('http://localhost:3000/claim/1');
