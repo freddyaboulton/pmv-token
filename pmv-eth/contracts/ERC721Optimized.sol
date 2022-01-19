@@ -25,7 +25,7 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
     // Token symbol
     string private _symbol;
 
-    // Mapping from token ID to owner address
+    // Array containing mapping zero-indexed tokens to owners
     address[] private _owners;
 
     // Mapping from token ID to approved address
@@ -34,19 +34,7 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
     // Mapping from owner to operator approvals
     mapping(address => mapping(address => bool)) private _operatorApprovals;
 
-    // Mapping from owner to list of owned token IDs
-    mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
-
-    // Mapping from token ID to index of the owner tokens list
-    mapping(uint256 => uint256) private _ownedTokensIndex;
-
-    // Array with all token ids, used for enumeration
-    uint256[] private _allTokens;
-
     uint256 private _numBurned;
-
-    // Mapping from token id to position in the allTokens array
-    mapping(uint256 => uint256) private _allTokensIndex;
 
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
@@ -253,7 +241,7 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
      */
     function _isApprovedOrOwner(address spender, uint256 tokenId) internal view virtual returns (bool) {
         require(_exists(tokenId), "ERC721: operator query for nonexistent token");
-        address owner = ERC721Optimized.ownerOf(tokenId);
+        address owner = ownerOf(tokenId);
         return (spender == owner || getApproved(tokenId) == spender || isApprovedForAll(owner, spender));
     }
 
@@ -353,7 +341,7 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
         address to,
         uint256 tokenId
     ) internal virtual {
-        require(ERC721Optimized.ownerOf(tokenId) == from, "ERC721: transfer from incorrect owner");
+        require(ownerOf(tokenId) == from, "ERC721: transfer from incorrect owner");
         require(to != address(0), "ERC721: transfer to the zero address");
 
         _beforeTokenTransfer(from, to, tokenId);
@@ -375,7 +363,7 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
      */
     function _approve(address to, uint256 tokenId) internal virtual {
         _tokenApprovals[tokenId] = to;
-        emit Approval(ERC721Optimized.ownerOf(tokenId), to, tokenId);
+        emit Approval(ownerOf(tokenId), to, tokenId);
     }
 
     /**

@@ -34,10 +34,11 @@ contract PMVOptimized is ERC721Optimized, Ownable {
         require(!saleActive, "SALE ACTIVE RIGHT NOW");
         require(proof.verify(root, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON WHITELIST");
         require(presaleMints[msg.sender] + tokenQuantity <= allowance, "MINTING MORE THAN ALLOWED");
+        require(tokenQuantity + totalNonBurnedSupply() <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
         require(tokenQuantity * salePrice == msg.value, "INCORRECT PAYMENT AMOUNT");
         
         for(uint256 i = 0; i < tokenQuantity; i++) {
-            _safeMint(msg.sender, totalNonBurnedSupply() + 1);
+            _mint(msg.sender, totalNonBurnedSupply() + 1);
         }  
         
         presaleMints[msg.sender] += tokenQuantity;      
@@ -47,11 +48,11 @@ contract PMVOptimized is ERC721Optimized, Ownable {
         require(saleActive, "SALE NOT ACTIVE");
         require(!presaleActive, "PRESALE ONLY RIGHT NOW");
         require(mints[msg.sender] + tokenQuantity <= maxPerWallet, "MINTING MORE THAN ALLOWED");
-        require(tokenQuantity + totalSupply() <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
+        require(tokenQuantity + totalNonBurnedSupply() <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
         require(tokenQuantity * salePrice <= msg.value, "INCORRECT PAYMENT AMOUNT");
 
         for(uint256 i = 0; i < tokenQuantity; i++) {
-            _safeMint(msg.sender, totalNonBurnedSupply() + 1);
+            _mint(msg.sender, totalNonBurnedSupply() + 1);
         }
 
         mints[msg.sender] += tokenQuantity;
