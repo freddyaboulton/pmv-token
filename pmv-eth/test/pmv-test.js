@@ -43,14 +43,22 @@ describe('PMV ETH Tests', function() {
       [addr2.address, 2],
       [addr3.address, 3]];
 
-
     const hashes = merkleEntries.map((token) => hashToken(...token));
     validTree = new MerkleTree(hashes, keccak256, {sortPairs: true});
     const root = validTree.getHexRoot();
-    pmv = await PMV.connect(owner).deploy(root, 'https://not-real-uri.com/');
+
+    const freeMints = [[addr5.address, 2],
+      [addr6.address, 2],
+      [addr7.address, 3]];
+
+    const freeHashes = freeMints.map((token) => hashToken(...token));
+    freeTree = new MerkleTree(freeHashes, keccak256, {sortPairs: true});
+    const rootMintFree = freeTree.getHexRoot();
+
+    pmv = await PMV.connect(owner).deploy(root, 'https://not-real-uri.com/', rootMintFree);
     await pmv.deployed();
 
-    pmvOptimized = await PMVOptimized.connect(owner).deploy(root, 'https://not-real-uri.com/');
+    pmvOptimized = await PMVOptimized.connect(owner).deploy(root, 'https://not-real-uri.com/', rootMintFree);
     await pmvOptimized.deployed();
     contracts = [pmv, pmvOptimized];
   });
@@ -92,6 +100,8 @@ describe('PMV ETH Tests', function() {
             const newRoot = tree.getHexRoot();
             await contract.connect(owner).setRoot(newRoot);
             expect(await contract.connect(addr1).root()).to.equal(newRoot);
+            await contract.connect(owner).setRootMintFree(newRoot);
+            expect(await contract.connect(addr1).root()).to.equal(newRoot);
           });
     });
 
@@ -111,6 +121,12 @@ describe('PMV ETH Tests', function() {
             } catch (error) {
               expect(error.message).to.contain('caller is not the owner');
             }
+            try {
+              await contract.connect(addr1).setRootMintFree(newRoot);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('caller is not the owner');
+            }
           });
     });
 
@@ -124,6 +140,21 @@ describe('PMV ETH Tests', function() {
           await contract.connect(addr1).mintPresale(2, proof, 1, {
             value: ethers.BigNumber.from('20000000000000000'),
           });
+          expect(false).to.be.true;
+        } catch (error) {
+          expect(error.message).to.contain('PRESALE NOT ACTIVE');
+        }
+      });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should not let users
+          mintFree when presale is not active`,
+      async function() {
+        const contract = contracts[test.index];
+        const proof = validTree.getHexProof(hashToken(addr5.address, 2));
+        try {
+          await contract.connect(addr5).mintFree(2, proof, 1);
           expect(false).to.be.true;
         } catch (error) {
           expect(error.message).to.contain('PRESALE NOT ACTIVE');
@@ -252,11 +283,19 @@ describe('PMV ETH Tests', function() {
         expect(await contract.balanceOf(addr2.address)).to.equal(1);
         expect(await contract.ownerOf(3)).to.equal(addr2.address);
 
+        proof = freeTree.getHexProof(hashToken(addr5.address, 2));
+        await contract.connect(addr5).mintFree(2, proof, 2);
+
+        proof = freeTree.getHexProof(hashToken(addr6.address, 2));
+        await contract.connect(addr6).mintFree(2, proof, 1);
+        expect(await contract.balanceOf(addr5.address)).to.equal(2);
+        expect(await contract.balanceOf(addr6.address)).to.equal(1);
+
         amount = await contract.provider.getBalance(contract.address);
         expect(amount).to.equal('60000000000000000');
 
         // Check the metadata is not revealed yet
-        for (let i = 1; i < 4; i++) {
+        for (let i = 1; i < 6; i++) {
           expect(await contract.tokenURI(i)).to.equal('https://not-real-uri.com/');
         }
       });
@@ -320,6 +359,21 @@ describe('PMV ETH Tests', function() {
     });
 
     testCases.forEach(function(test) {
+      it(`${test.name}: Should not let accounts not on free whitelist mint`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setPresale(true);
+            try {
+              const proof = freeTree.getHexProof(hashToken(addr1.address, 1));
+              await contract.connect(addr1).mintFree(1, proof, 1);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('NOT ON WHITELIST');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
       it(`${test.name}: Should not let those on whitelist
       mint more than allowed`,
       async function() {
@@ -361,6 +415,52 @@ describe('PMV ETH Tests', function() {
         }
       });
     });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should not let those on whitelist
+      mint free more than allowed`,
+      async function() {
+        const contract = contracts[test.index];
+        await contract.connect(owner).setPresale(true);
+        // Mint more than allowed in a single transaction
+        try {
+          const proof = freeTree.getHexProof(hashToken(addr5.address, 2));
+          await contract.connect(addr5).mintFree(2, proof, 3);
+          expect(false).to.be.true;
+        } catch (error) {
+          expect(error.message).to.contain('MINTING MORE THAN ALLOWED');
+        }
+        // Mint more than allowed in multiple transactions
+        const proof = freeTree.getHexProof(hashToken(addr5.address, 2));
+        await contract.connect(addr5).mintFree(2, proof, 1);
+
+        try {
+          await contract.connect(addr5).mintFree(2, proof, 3);
+          expect(false).to.be.true;
+        } catch (error) {
+          expect(error.message).to.contain('MINTING MORE THAN ALLOWED');
+        }
+      });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should not let send eth for free mint`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setPresale(true);
+            try {
+              const proof = freeTree.getHexProof(hashToken(addr5.address, 2));
+              await contract.connect(addr5).mintFree(2, proof, 2, {
+                value: ethers.BigNumber.from('40000000000000000'),
+              });
+              expect(false).to.be(true);
+            } catch (error) {
+              expect(error.message).to.contain(
+                  'non-payable method cannot override value');
+            }
+          });
+    });
+
 
     testCases.forEach(function(test) {
       it(`${test.name}: Should not let users mint if 
