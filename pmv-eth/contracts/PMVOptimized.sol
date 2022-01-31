@@ -3,12 +3,12 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "./ERC721Optimized.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 
-contract PMV is ERC721Enumerable, Ownable {
+contract PMVOptimized is ERC721Optimized, Ownable {
     using Strings for uint256;
     using MerkleProof for bytes32[];
 
@@ -24,7 +24,7 @@ contract PMV is ERC721Enumerable, Ownable {
     string private notRevealedUri;
     bool private revealed = false;
 
-    constructor(bytes32 merkleroot, string memory uri) ERC721("PMV", "PMVTKN") {
+    constructor(bytes32 merkleroot, string memory uri) ERC721Optimized("PMV", "PMVTKN") {
         root = merkleroot;
         notRevealedUri = uri;
      }
@@ -34,10 +34,11 @@ contract PMV is ERC721Enumerable, Ownable {
         require(!saleActive, "SALE ACTIVE RIGHT NOW");
         require(proof.verify(root, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON WHITELIST");
         require(presaleMints[msg.sender] + tokenQuantity <= allowance, "MINTING MORE THAN ALLOWED");
+        require(tokenQuantity + totalNonBurnedSupply() <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
         require(tokenQuantity * salePrice == msg.value, "INCORRECT PAYMENT AMOUNT");
         
         for(uint256 i = 0; i < tokenQuantity; i++) {
-            _mint(msg.sender, totalSupply() + 1);
+            _mint(msg.sender, totalNonBurnedSupply() + 1);
         }  
         
         presaleMints[msg.sender] += tokenQuantity;      
@@ -47,11 +48,11 @@ contract PMV is ERC721Enumerable, Ownable {
         require(saleActive, "SALE NOT ACTIVE");
         require(!presaleActive, "PRESALE ONLY RIGHT NOW");
         require(mints[msg.sender] + tokenQuantity <= maxPerWallet, "MINTING MORE THAN ALLOWED");
-        require(tokenQuantity + totalSupply() <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
+        require(tokenQuantity + totalNonBurnedSupply() <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
         require(tokenQuantity * salePrice <= msg.value, "INCORRECT PAYMENT AMOUNT");
 
         for(uint256 i = 0; i < tokenQuantity; i++) {
-            _mint(msg.sender, totalSupply() + 1);
+            _mint(msg.sender, totalNonBurnedSupply() + 1);
         }
 
         mints[msg.sender] += tokenQuantity;

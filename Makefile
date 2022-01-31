@@ -41,7 +41,7 @@ lint-sol:
 	cd pmv-sol && npx eslint app
 
 lint-eth:
-	cd pmv-eth && npx eslint test scripts
+	cd pmv-eth && npx eslint test scripts --ignore-pattern test/ERC721* --ignore-pattern test/match-openzeppelin* --ignore-pattern test/SupportsInterface*
 
 .PHONY: lint
 lint: lint-eth lint-sol
