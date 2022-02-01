@@ -37,7 +37,7 @@ async function main() {
   console.log('Deploying contracts with the account:', deployer.address);
 
   const pmv = await PMV.connect(deployer).deploy(root,
-      'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/');
+      'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/', root);
 
   console.log('PMV deployed to:', pmv.address);
 
