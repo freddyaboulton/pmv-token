@@ -49,7 +49,7 @@ contract PMVOptimized is PMVMixin, ERC721Optimized {
             _mint(msg.sender, totalNonBurnedSupply() + 1);
         }  
         
-        presaleMints[msg.sender] += tokenQuantity;      
+        freeMints[msg.sender] += tokenQuantity;      
     }
 
     function mint(uint256 tokenQuantity) external payable {

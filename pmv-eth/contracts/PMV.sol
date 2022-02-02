@@ -47,7 +47,7 @@ contract PMV is ERC721Enumerable, PMVMixin{
             _mint(msg.sender, totalSupply() + 1);
         }  
         
-        presaleMints[msg.sender] += tokenQuantity;      
+        freeMints[msg.sender] += tokenQuantity;      
     }
 
     function mint(uint256 tokenQuantity) external payable {

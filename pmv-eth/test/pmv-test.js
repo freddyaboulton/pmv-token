@@ -47,7 +47,8 @@ describe('PMV ETH Tests', function() {
     validTree = new MerkleTree(hashes, keccak256, {sortPairs: true});
     const root = validTree.getHexRoot();
 
-    const freeMints = [[addr5.address, 2],
+    const freeMints = [[addr1.address, 2],
+      [addr5.address, 2],
       [addr6.address, 2],
       [addr7.address, 3]];
 
@@ -424,22 +425,31 @@ describe('PMV ETH Tests', function() {
         await contract.connect(owner).setPresale(true);
         // Mint more than allowed in a single transaction
         try {
-          const proof = freeTree.getHexProof(hashToken(addr5.address, 2));
-          await contract.connect(addr5).mintFree(2, proof, 3);
+          const proof = freeTree.getHexProof(hashToken(addr1.address, 2));
+          await contract.connect(addr1).mintFree(2, proof, 3);
           expect(false).to.be.true;
         } catch (error) {
           expect(error.message).to.contain('MINTING MORE THAN ALLOWED');
         }
         // Mint more than allowed in multiple transactions
-        const proof = freeTree.getHexProof(hashToken(addr5.address, 2));
-        await contract.connect(addr5).mintFree(2, proof, 1);
+        // Mint presale first to make sure we properly
+        // keep track of free vs presale mints
+        const proofPresale = validTree.getHexProof(hashToken(addr1.address, 2));
+        await contract.connect(addr1).mintPresale(2, proofPresale, 2, {
+          value: ethers.BigNumber.from('40000000000000000'),
+        });
+
+        const proof = freeTree.getHexProof(hashToken(addr1.address, 2));
+        await contract.connect(addr1).mintFree(2, proof, 1);
 
         try {
-          await contract.connect(addr5).mintFree(2, proof, 3);
+          await contract.connect(addr1).mintFree(2, proof, 3);
           expect(false).to.be.true;
         } catch (error) {
           expect(error.message).to.contain('MINTING MORE THAN ALLOWED');
         }
+
+        await contract.connect(addr1).mintFree(2, proof, 1);
       });
     });
 
