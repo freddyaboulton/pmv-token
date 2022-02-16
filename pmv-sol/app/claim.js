@@ -14,12 +14,13 @@ import {SystemProgram} from '@solana/web3.js';
 
 /**
  * Mint token to a given SOL address.
- * @param {string} address - SOL Address.
+ * @param {string} ethAddress - SOL Address.
+ * @param {string} solAddress - SOL Address.
  * @param {int} tokenIndex - Max allowed to mint.
  * @return {transaction} Solana transaction.
  */
-export async function mintToken(address, tokenIndex) {
-  const destination = new anchor.web3.PublicKey(address);
+export async function mintToken(ethAddress, solAddress, tokenIndex) {
+  const destination = new anchor.web3.PublicKey(solAddress);
   const mint = anchor.web3.Keypair.generate();
   const token = await getTokenWallet(
       destination,
@@ -36,6 +37,8 @@ export async function mintToken(address, tokenIndex) {
   const tx = await program.rpc.mintNft(
       new anchor.BN(bump),
       new anchor.BN(tokenIndex),
+      ethAddress,
+      solAddress,
       {
         accounts: {
           config: CONFIG,
@@ -106,8 +109,10 @@ export async function isClaimed(tokenIndex) {
   const [key] = await findClaimStatusKey(tokenIndex, candyMachine);
   const status = await program.account.claimStatus.fetchNullable(key);
   if (status == null) {
-    return false;
+    return {'isClaimed': false,
+      'ethAddress': '',
+      'solAddress': ''};
   } else {
-    return status.isClaimed;
+    return status;
   }
 }

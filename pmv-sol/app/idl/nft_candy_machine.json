@@ -1,5 +1,5 @@
 {
-  "version": "0.0.0",
+  "version": "0.1.0",
   "name": "nft_candy_machine",
   "instructions": [
     {
@@ -89,6 +89,14 @@
         {
           "name": "tokenIndex",
           "type": "u64"
+        },
+        {
+          "name": "ethAddress",
+          "type": "string"
+        },
+        {
+          "name": "solAddress",
+          "type": "string"
         }
       ]
     },
@@ -226,6 +234,14 @@
           {
             "name": "isClaimed",
             "type": "bool"
+          },
+          {
+            "name": "solAddress",
+            "type": "string"
+          },
+          {
+            "name": "ethAddress",
+            "type": "string"
           }
         ]
       }
@@ -337,74 +353,79 @@
   ],
   "errors": [
     {
-      "code": 300,
+      "code": 6000,
       "name": "IncorrectOwner",
       "msg": "Account does not have correct owner!"
     },
     {
-      "code": 301,
+      "code": 6001,
       "name": "Uninitialized",
       "msg": "Account is not initialized!"
     },
     {
-      "code": 302,
+      "code": 6002,
       "name": "MintMismatch",
       "msg": "Mint Mismatch!"
     },
     {
-      "code": 303,
+      "code": 6003,
       "name": "IndexGreaterThanLength",
       "msg": "Index greater than length!"
     },
     {
-      "code": 304,
+      "code": 6004,
       "name": "ConfigMustHaveAtleastOneEntry",
       "msg": "Config must have atleast one entry!"
     },
     {
-      "code": 305,
+      "code": 6005,
       "name": "NumericalOverflowError",
       "msg": "Numerical overflow error!"
     },
     {
-      "code": 306,
+      "code": 6006,
       "name": "TooManyCreators",
       "msg": "Can only provide up to 4 creators to candy machine (because candy machine is one)!"
     },
     {
-      "code": 307,
+      "code": 6007,
       "name": "UuidMustBeExactly6Length",
       "msg": "Uuid must be exactly of 6 length"
     },
     {
-      "code": 308,
+      "code": 6008,
       "name": "NotEnoughTokens",
       "msg": "Not enough tokens to pay for this minting"
     },
     {
-      "code": 309,
+      "code": 6009,
       "name": "NotEnoughSOL",
       "msg": "Not enough SOL to pay for this minting"
     },
     {
-      "code": 310,
+      "code": 6010,
       "name": "TokenTransferFailed",
       "msg": "Token transfer failed"
     },
     {
-      "code": 311,
+      "code": 6011,
       "name": "CandyMachineEmpty",
       "msg": "Candy machine is empty!"
     },
     {
-      "code": 312,
+      "code": 6012,
       "name": "CandyMachineNotLiveYet",
       "msg": "Candy machine is not live yet!"
     },
     {
-      "code": 313,
+      "code": 6013,
       "name": "ConfigLineMismatch",
       "msg": "Number of config lines must be at least number of items available"
+    },
+    {
+      "code": 6014,
+      "name": "MustBeAuthority",
+      "msg": "Must be authority to mint"
     }
   ]
 }

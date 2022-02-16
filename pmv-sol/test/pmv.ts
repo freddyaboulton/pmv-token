@@ -106,7 +106,7 @@ describe("nft-candy-machine", function () {
 
   // Address of the deployed program.
   const programId = new anchor.web3.PublicKey(
-    "kdWSoo9pFXoPC1mnn69VsNBvf3ySC2U5NeBzTZm4cax"
+    "C5XKmqgXb3WxxFFDUfrBL9igiz6d2TMqroSyAWwtGVS6"
   );
 
   const walletWrapper = new anchor.Wallet(myWallet);
@@ -302,6 +302,8 @@ describe("nft-candy-machine", function () {
           const tx = await program.rpc.mintNft(
             new anchor.BN(bump),
             new anchor.BN(i),
+            "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+            myWallet.publicKey.toString(),
             {
               accounts: {
                 config: this.config.publicKey,
@@ -365,6 +367,8 @@ describe("nft-candy-machine", function () {
           const [key] = await findClaimStatusKey(i, candyMachine);
           const status = await program.account.claimStatus.fetch(key);
           assert(status.isClaimed === true);
+          assert(status.ethAddress === "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80");
+          assert(status.solAddress === myWallet.publicKey.toString());
         } catch (e) {
           if (i != 2) {
             console.log("Failure at ", i, e);
@@ -399,6 +403,8 @@ describe("nft-candy-machine", function () {
       const tx = await program.rpc.mintNft(
         new anchor.BN(bump),
         new anchor.BN(6),
+        "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+        myWallet.publicKey.toString(),
         {
           accounts: {
             config: this.config.publicKey,
@@ -462,6 +468,8 @@ describe("nft-candy-machine", function () {
         const tx = await program.rpc.mintNft(
           new anchor.BN(bump),
           new anchor.BN(6),
+          "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+          myWallet.publicKey.toString(),
           {
             accounts: {
               config: this.config.publicKey,
@@ -546,6 +554,8 @@ describe("nft-candy-machine", function () {
         const tx = await program.rpc.mintNft(
           new anchor.BN(bump),
           new anchor.BN(8),
+          "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+          myWallet.publicKey.toString(),
           {
             accounts: {
               config: this.config.publicKey,
@@ -607,7 +617,7 @@ describe("nft-candy-machine", function () {
         }  catch (e) {
           const err = e as SendTransactionError;
           expect(err.message).to.have.string(
-            "Must be authority to mint"
+            "Error processing Instruction 5"
           );
         }
     });

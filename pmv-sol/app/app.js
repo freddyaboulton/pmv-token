@@ -25,8 +25,8 @@ app.get('/claim/:tokenIndex',
       if (!errors.isEmpty()) {
         return res.status(422).json({errors: errors.array()});
       }
-      res.status(200).json({
-        'isClaimed': await isClaimed(req.params.tokenIndex)});
+      const status = await isClaimed(req.params.tokenIndex);
+      res.status(200).json(status);
     });
 
 app.post('/claim',
@@ -57,7 +57,9 @@ app.post('/claim',
 
       if (isApproved) {
         try {
-          const [tx, mintAddress] = await mintToken(req.body.solAddress,
+          const [tx, mintAddress] = await mintToken(
+              req.body.ethAddress,
+              req.body.solAddress,
               req.body.tokenIndex);
           status = 200;
           response = {'isVerified': isVerified, 'isOwner': isOwner,

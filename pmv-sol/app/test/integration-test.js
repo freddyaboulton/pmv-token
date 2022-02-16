@@ -46,8 +46,9 @@ describe('server-verify', function() {
     const signature = personalSign(
         {privateKey: privateKey1,
           data: makeMessage()});
+    const solAddress = '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9';
     const res = await axios.post('http://localhost:3000/claim', {
-      solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
+      solAddress: solAddress,
       ethAddress: publicKey1,
       signature: signature,
       tokenIndex: 12},
@@ -59,15 +60,19 @@ describe('server-verify', function() {
 
     const verifiedRes = await axios.get('http://localhost:3000/claim/12');
     expect(verifiedRes.data.isClaimed).to.be.true;
+    expect(verifiedRes.data.ethAddress).to.equal(publicKey1);
+    expect(verifiedRes.data.solAddress).to.equal(solAddress);
   });
 
   it('Should correctly verify checksummed KeyPair1', async function() {
     const signature = personalSign(
         {privateKey: privateKey1,
           data: makeMessage()});
+    const ethAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+    const solAddress = '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9';
     const res = await axios.post('http://localhost:3000/claim', {
-      solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
-      ethAddress: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+      solAddress: solAddress,
+      ethAddress: ethAddress,
       signature: signature,
       tokenIndex: 13},
     );
@@ -80,14 +85,17 @@ describe('server-verify', function() {
 
     const verifiedRes = await axios.get('http://localhost:3000/claim/13');
     expect(verifiedRes.data.isClaimed).to.be.true;
+    expect(verifiedRes.data.ethAddress).to.equal(ethAddress);
+    expect(verifiedRes.data.solAddress).to.equal(solAddress);
   });
 
   it('Should correctly verify KeyPair2', async function() {
     const signature = personalSign(
         {privateKey: privateKey2,
           data: makeMessage()});
+    const solAddress = '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9';
     const res = await axios.post('http://localhost:3000/claim', {
-      solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
+      solAddress: solAddress,
       ethAddress: publicKey2,
       signature: signature,
       tokenIndex: 7,
@@ -101,14 +109,17 @@ describe('server-verify', function() {
 
     const verifiedRes = await axios.get('http://localhost:3000/claim/7');
     expect(verifiedRes.data.isClaimed).to.be.true;
+    expect(verifiedRes.data.ethAddress).to.equal(publicKey2);
+    expect(verifiedRes.data.solAddress).to.equal(solAddress);
   });
 
   it('Should correctly verify KeyPair3', async function() {
     const signature = personalSign(
         {privateKey: privateKey3,
           data: makeMessage()});
+    const solAddress = '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5';
     const res = await axios.post('http://localhost:3000/claim', {
-      solAddress: '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5',
+      solAddress: solAddress,
       ethAddress: publicKey3,
       signature: signature,
       tokenIndex: 2,
@@ -135,14 +146,17 @@ describe('server-verify', function() {
 
     const verifiedRes = await axios.get('http://localhost:3000/claim/2');
     expect(verifiedRes.data.isClaimed).to.be.true;
+    expect(verifiedRes.data.ethAddress).to.equal(publicKey3);
+    expect(verifiedRes.data.solAddress).to.equal(solAddress);
   });
 
   it('Should correctly verify KeyPair4', async function() {
     const signature = personalSign(
         {privateKey: privateKey4,
           data: makeMessage()});
+    const solAddress = '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9';
     const res = await axios.post('http://localhost:3000/claim', {
-      solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
+      solAddress: solAddress,
       ethAddress: publicKey4,
       signature: signature,
       tokenIndex: 21,
@@ -156,6 +170,8 @@ describe('server-verify', function() {
 
     const verifiedRes = await axios.get('http://localhost:3000/claim/21');
     expect(verifiedRes.data.isClaimed).to.be.true;
+    expect(verifiedRes.data.ethAddress).to.equal(publicKey4);
+    expect(verifiedRes.data.solAddress).to.equal(solAddress);
   });
 
   it('Should not verify publicKey1 with privateKey2', async function() {
@@ -391,5 +407,7 @@ describe('server-verify', function() {
       async function() {
         const res = await axios.get('http://localhost:3000/claim/22');
         expect(res.data.isClaimed).to.be.false;
+        expect(res.data.ethAddress).to.equal('');
+        expect(res.data.solAddress).to.equal('');
       });
 });
