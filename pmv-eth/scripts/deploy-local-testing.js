@@ -19,7 +19,7 @@ function hashToken(account, quantity) {
  * Deploy the contract on the local hardhat network
  */
 async function main() {
-  const PMV = await ethers.getContractFactory('PMV');
+  const PMV = await ethers.getContractFactory('PMVOptimized');
 
   const [deployer, addr2, addr3, addr4] = await ethers.getSigners();
 
