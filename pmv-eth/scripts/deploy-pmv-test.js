@@ -32,6 +32,7 @@ async function main() {
 
   // We get the contract to deploy
   const PMV = await ethers.getContractFactory('PMV');
+  const PMVOptimized = await ethers.getContractFactory('PMVOptimized');
 
   const [deployer] = await ethers.getSigners();
 
@@ -48,12 +49,19 @@ async function main() {
   console.log("Deploying contracts with the account:", deployer.address);
 
   const pmv = await PMV.connect(deployer).deploy(root, 'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/');
+  const pmvOpt = await PMVOptimized.connect(deployer).deploy(root, 'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/');
 
   console.log('PMV deployed to:', pmv.address);
+  console.log('PMVOptimized deployed to:', pmvOpt.address);
 
   await pmv.connect(deployer).setPresale(true);
+  await pmvOpt.connect(deployer).setPresale(true);
+
   const preSaleStatus = await pmv.connect(deployer).presaleActive();
   console.log('Presale status ', preSaleStatus)
+
+  const preSaleStatusOpt = await pmvOpt.connect(deployer).presaleActive();
+  console.log('Presale status ', preSaleStatusOpt)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
