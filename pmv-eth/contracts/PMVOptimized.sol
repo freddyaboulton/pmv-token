@@ -111,4 +111,9 @@ contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
         offsetRequested = true;
     }
 
+    function burn(uint256 tokenId) public virtual {
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721Burnable: caller is not owner nor approved");
+        _burn(tokenId);
+    }
+
 }
