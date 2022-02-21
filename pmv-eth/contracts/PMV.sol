@@ -37,8 +37,7 @@ contract PMV is ERC721Enumerable, PMVMixin{
     }
 
     function mintFree(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external {
-        require(presaleActive, "PRESALE NOT ACTIVE");
-        require(!saleActive, "SALE ACTIVE RIGHT NOW");
+        require(freeMintAllowed, "Free mint not allowed");
         require(proof.verify(rootMintFree, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON WHITELIST");
         require(freeMints[msg.sender] + tokenQuantity <= allowance, "MINTING MORE THAN ALLOWED");
         require(tokenQuantity + totalSupply() <= maxSupply, "NOT ENOUGH LEFT IN STOCK");

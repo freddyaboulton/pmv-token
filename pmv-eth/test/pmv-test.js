@@ -150,7 +150,7 @@ describe('PMV ETH Tests', function() {
 
     testCases.forEach(function(test) {
       it(`${test.name}: Should not let users
-          mintFree when presale is not active`,
+          mintFree when not allowed`,
       async function() {
         const contract = contracts[test.index];
         const proof = validTree.getHexProof(hashToken(addr5.address, 2));
@@ -158,7 +158,7 @@ describe('PMV ETH Tests', function() {
           await contract.connect(addr5).mintFree(2, proof, 1);
           expect(false).to.be.true;
         } catch (error) {
-          expect(error.message).to.contain('PRESALE NOT ACTIVE');
+          expect(error.message).to.contain('Free mint not allowed');
         }
       });
     });
@@ -217,6 +217,22 @@ describe('PMV ETH Tests', function() {
           });
     });
 
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should not let non-owners 
+        change the freeMintAllowed satus`,
+      async function() {
+        const contract = contracts[test.index];
+        try {
+          await contract.connect(addr1).setFreeMintAllowed(false);
+          expect(false).to.be.true;
+        } catch (error) {
+          expect(error.message).to.contain('caller is not the owner');
+        }
+      });
+    });
+
+
     testCases.forEach(function(test) {
       it(`${test.name}: Should not let non-owners change the sale satus`,
           async function() {
@@ -269,6 +285,7 @@ describe('PMV ETH Tests', function() {
       async function() {
         const contract = contracts[test.index];
         await contract.connect(owner).setPresale(true);
+        await contract.connect(owner).setFreeMintAllowed(true);
         let proof = validTree.getHexProof(hashToken(addr1.address, 2));
         await contract.connect(addr1).mintPresale(2, proof, 2, {
           value: ethers.BigNumber.from('40000000000000000'),
@@ -363,7 +380,7 @@ describe('PMV ETH Tests', function() {
       it(`${test.name}: Should not let accounts not on free whitelist mint`,
           async function() {
             const contract = contracts[test.index];
-            await contract.connect(owner).setPresale(true);
+            await contract.connect(owner).setFreeMintAllowed(true);
             try {
               const proof = freeTree.getHexProof(hashToken(addr1.address, 1));
               await contract.connect(addr1).mintFree(1, proof, 1);
@@ -422,6 +439,7 @@ describe('PMV ETH Tests', function() {
       mint free more than allowed`,
       async function() {
         const contract = contracts[test.index];
+        await contract.connect(owner).setFreeMintAllowed(true);
         await contract.connect(owner).setPresale(true);
         // Mint more than allowed in a single transaction
         try {
@@ -457,7 +475,7 @@ describe('PMV ETH Tests', function() {
       it(`${test.name}: Should not let send eth for free mint`,
           async function() {
             const contract = contracts[test.index];
-            await contract.connect(owner).setPresale(true);
+            await contract.connect(owner).setFreeMintAllowed(true);
             try {
               const proof = freeTree.getHexProof(hashToken(addr5.address, 2));
               await contract.connect(addr5).mintFree(2, proof, 2, {
