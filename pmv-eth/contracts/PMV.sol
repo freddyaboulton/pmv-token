@@ -3,30 +3,23 @@
 
 pragma solidity ^0.8.0;
 
+import "./PMVMixin.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 
-contract PMV is ERC721Enumerable, Ownable {
+contract PMV is ERC721Enumerable, PMVMixin{
     using Strings for uint256;
     using MerkleProof for bytes32[];
 
-    uint256 public constant maxSupply = 30;
-    uint256 public constant maxPerWallet = 10;
-    uint public constant salePrice = 0.02 ether;
-    bytes32 public root;
-    bool public presaleActive = false; 
-    bool public saleActive = false;
     mapping (address => uint256) private presaleMints;
+    mapping (address => uint256) private freeMints;
     mapping (address => uint256) private mints;    
-    string private tokenBaseURI;
-    string private notRevealedUri;
-    bool private revealed = false;
 
-    constructor(bytes32 merkleroot, string memory uri) ERC721("PMV", "PMVTKN") {
+    constructor(bytes32 merkleroot, string memory uri, bytes32 _rootMintFree) ERC721("PMV", "PMVTKN") {
         root = merkleroot;
         notRevealedUri = uri;
+        rootMintFree = _rootMintFree;
      }
     
     function mintPresale(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external payable {
@@ -41,6 +34,19 @@ contract PMV is ERC721Enumerable, Ownable {
         }  
         
         presaleMints[msg.sender] += tokenQuantity;      
+    }
+
+    function mintFree(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external {
+        require(freeMintAllowed, "Free mint not allowed");
+        require(proof.verify(rootMintFree, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON WHITELIST");
+        require(freeMints[msg.sender] + tokenQuantity <= allowance, "MINTING MORE THAN ALLOWED");
+        require(tokenQuantity + totalSupply() <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
+        
+        for(uint256 i = 0; i < tokenQuantity; i++) {
+            _mint(msg.sender, totalSupply() + 1);
+        }  
+        
+        freeMints[msg.sender] += tokenQuantity;      
     }
 
     function mint(uint256 tokenQuantity) external payable {
@@ -60,37 +66,7 @@ contract PMV is ERC721Enumerable, Ownable {
     
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         require(_exists(tokenId), "URI query for nonexistent token");
-
-        if(revealed == false) {
-            return notRevealedUri;
-        }
-
-        else {
-            return string(abi.encodePacked(tokenBaseURI, tokenId.toString()));
-        }        
-    } 
-
-    function setPresale(bool _presaleStatus) external onlyOwner {
-        presaleActive = _presaleStatus;
-    }
-
-    function setSale(bool _saleStatus) external onlyOwner {
-        saleActive = _saleStatus;
-    }
-
-    function setURIStatus(bool _revealed, string calldata _tokenBaseURI) external onlyOwner {
-        require(bytes(_tokenBaseURI).length > 0, "_tokenBaseURI is empty");
-        revealed = _revealed;
-        tokenBaseURI = _tokenBaseURI;
-    }
-
-    function setRoot(bytes32 _root) external onlyOwner {
-        require(_root.length > 0, "_root is empty");
-        root = _root;
-    }
-
-    function withdraw() external onlyOwner {
-        payable(msg.sender).transfer(address(this).balance);
+        return _tokenURI(tokenId);
     }
 
 }

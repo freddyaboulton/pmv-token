@@ -723,10 +723,10 @@ function shouldBehaveLikeERC721Enumerable(errorPrefix, owner, newOwner, approved
       });
 
       it('returns right index after burning multiple tokens', async function() {
-          await this.token.mint(3, {from: owner});
-          await this.token.burn(new BN(3));
-          await this.token.burn(new BN(4));
-          expect(await this.token.tokenByIndex(2)).to.be.bignumber.equal('5');
+        await this.token.mint(3, {from: owner});
+        await this.token.burn(new BN(3));
+        await this.token.burn(new BN(4));
+        expect(await this.token.tokenByIndex(2)).to.be.bignumber.equal('5');
       });
 
       it('returns right index after burning multiple non-consecutive tokens', async function() {
@@ -739,7 +739,7 @@ function shouldBehaveLikeERC721Enumerable(errorPrefix, owner, newOwner, approved
         expect(await this.token.tokenByIndex(0)).to.be.bignumber.equal('2');
         expect(await this.token.tokenByIndex(1)).to.be.bignumber.equal('4');
         expect(await this.token.tokenByIndex(2)).to.be.bignumber.equal('6');
-    });
+      });
 
       [firstTokenId, secondTokenId].forEach(function(tokenId) {
         it(`returns all tokens after burning token ${tokenId} and minting new tokens`, async function() {
