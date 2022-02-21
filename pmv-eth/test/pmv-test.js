@@ -1049,6 +1049,46 @@ describe('PMV ETH Tests', function() {
     });
 
     testCases.forEach(function(test) {
+      it(`${test.name}: Should let owner of token burn pt2`,
+          async function() {
+            if (test.name == 'PMV') {
+              return this.skip(); // eslint-disable-line no-invalid-this
+            }
+            const contract = contracts[test.index];
+            await contract.connect(owner).setSale(true);
+
+            await contract.connect(addr7).mint(10, {
+              value: ethers.BigNumber.from('200000000000000000'),
+            });
+            expect(await contract.balanceOf(addr7.address)).to.equal(10);
+
+            await contract.connect(addr7).burn(7);
+            await contract.connect(addr7).burn(5);
+            expect(await contract.balanceOf(addr7.address)).to.equal(8);
+            // seventh index
+            expect(await contract.tokenOfOwnerByIndex(
+                addr7.address, 7)).to.equal(10);
+
+            await contract.connect(addr1).mint(10, {
+              value: ethers.BigNumber.from('200000000000000000'),
+            });
+            expect(await contract.balanceOf(addr1.address)).to.equal(10);
+            expect(await contract.totalSupply()).to.equal(18);
+            expect(await contract.totalNonBurnedSupply()).to.equal(20);
+            expect(await contract.tokenByIndex(17),
+            ).to.equal(20);
+            expect(await contract.tokenOfOwnerByIndex(
+                addr1.address, 2)).to.equal(13);
+            await contract.connect(addr1).burn(14);
+            expect(await contract.tokenOfOwnerByIndex(
+                addr1.address, 2)).to.equal(13);
+            expect(await contract.tokenOfOwnerByIndex(
+                addr1.address, 4)).to.equal(16);
+            expect(await contract.tokenByIndex(16)).to.equal(20);
+          });
+    });
+
+    testCases.forEach(function(test) {
       it(`${test.name}: Should not let non-owner withdraw balance`,
           async function() {
             const contract = contracts[test.index];
