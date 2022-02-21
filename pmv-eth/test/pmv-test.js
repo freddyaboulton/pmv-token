@@ -132,6 +132,33 @@ describe('PMV ETH Tests', function() {
     });
 
     testCases.forEach(function(test) {
+      it(`${test.name}: Should not let non-owners change the maxPerWallet`,
+          async function() {
+            const contract = contracts[test.index];
+            try {
+              await contract.connect(addr1).setMaxPerWallet(30);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('caller is not the owner');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should not let owner set zero maxPerWallet`,
+          async function() {
+            const contract = contracts[test.index];
+            try {
+              await contract.connect(owner).setMaxPerWallet(0);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain(
+                  'maxPerWallet should be positive');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
       it(`${test.name}: Should not let users
           mintPresale when presale is not active`,
       async function() {
@@ -710,6 +737,34 @@ describe('PMV ETH Tests', function() {
               expect(false).to.be.true;
             } catch (error) {
               expect(error.message).to.contain('caller is not the owner');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should let owner change maxPerWallet`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setSale(true);
+
+            await contract.connect(addr6).mint(10, {
+              value: ethers.BigNumber.from('200000000000000000'),
+            });
+            expect(await contract.balanceOf(addr6.address)).to.equal(10);
+
+            await contract.connect(owner).setMaxPerWallet(20);
+            await contract.connect(addr6).mint(10, {
+              value: ethers.BigNumber.from('200000000000000000'),
+            });
+            expect(await contract.balanceOf(addr6.address)).to.equal(20);
+
+            try {
+              await contract.connect(addr6).mint(1, {
+                value: ethers.BigNumber.from('20000000000000000'),
+              });
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('MINTING MORE THAN ALLOWED');
             }
           });
     });
