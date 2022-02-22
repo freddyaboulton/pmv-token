@@ -30,6 +30,7 @@ contract PMV is ERC721Enumerable, PMVMixin{
         require(tokenQuantity * salePrice <= msg.value, "INCORRECT PAYMENT AMOUNT");
 
         uint256 currentSupply = totalSupply();
+        require(tokenQuantity + currentSupply <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
 
         for(uint256 i = 1; i <= tokenQuantity; i++) {
             _mint(msg.sender, currentSupply + i);

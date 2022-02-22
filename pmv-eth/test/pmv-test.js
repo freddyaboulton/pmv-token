@@ -638,6 +638,61 @@ describe('PMV ETH Tests', function() {
           });
     });
 
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should enfore maxSupply for presaleMint`,
+          async function() {
+            const contract = contracts[test.index];
+            const newEntries = [[owner.address, 10],
+              [addr1.address, 10],
+              [addr2.address, 9],
+              [addr3.address, 2],
+            ];
+            const newHashes = newEntries.map((token) => hashToken(...token));
+            tree = new MerkleTree(newHashes, keccak256, {sortPairs: true});
+            const newRoot = tree.getHexRoot();
+            await contract.connect(owner).setRoot(newRoot);
+            await contract.connect(owner).setPresale(true);
+            await contract.connect(owner).setFreeMintAllowed(true);
+
+            let proof = tree.getHexProof(hashToken(addr1.address, 10));
+
+            await contract.connect(addr1).mintPresale(10, proof, 10, {
+              value: ethers.BigNumber.from('200000000000000000'),
+            });
+
+            proof = tree.getHexProof(hashToken(owner.address, 10));
+            await contract.connect(owner).mintPresale(10, proof, 10, {
+              value: ethers.BigNumber.from('200000000000000000'),
+            });
+
+            proof = tree.getHexProof(hashToken(addr2.address, 9));
+            await contract.connect(addr2).mintPresale(9, proof, 9, {
+              value: ethers.BigNumber.from('180000000000000000'),
+            });
+
+            proof = tree.getHexProof(hashToken(addr3.address, 2));
+
+            try {
+              await contract.connect(addr3).mintPresale(2, proof, 2, {
+                value: ethers.BigNumber.from('40000000000000000'),
+              });
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
+            }
+
+            try {
+              proof = freeTree.getHexProof(hashToken(addr5.address, 2));
+              await contract.connect(addr5).mintFree(2, proof, 2);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
+            }
+          });
+    });
+
+
     testCases.forEach(function(test) {
       it(`${test.name}: Should not let users mint more than maxPerWallet`,
           async function() {
