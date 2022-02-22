@@ -25,12 +25,15 @@ contract PMV is ERC721Enumerable, PMVMixin{
     function mintPresale(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external payable {
         require(presaleActive, "PRESALE NOT ACTIVE");
         require(!saleActive, "SALE ACTIVE RIGHT NOW");
-        require(proof.verify(root, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON WHITELIST");
+        require(proof.verify(root, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON ALLOWLIST");
         require(presaleMints[msg.sender] + tokenQuantity <= allowance, "MINTING MORE THAN ALLOWED");
-        require(tokenQuantity * salePrice == msg.value, "INCORRECT PAYMENT AMOUNT");
-        
-        for(uint256 i = 0; i < tokenQuantity; i++) {
-            _mint(msg.sender, totalSupply() + 1);
+        require(tokenQuantity * salePrice <= msg.value, "INCORRECT PAYMENT AMOUNT");
+
+        uint256 currentSupply = totalSupply();
+        require(tokenQuantity + currentSupply <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
+
+        for(uint256 i = 1; i <= tokenQuantity; i++) {
+            _mint(msg.sender, currentSupply + i);
         }  
         
         presaleMints[msg.sender] += tokenQuantity;      
@@ -38,12 +41,15 @@ contract PMV is ERC721Enumerable, PMVMixin{
 
     function mintFree(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external {
         require(freeMintAllowed, "Free mint not allowed");
-        require(proof.verify(rootMintFree, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON WHITELIST");
+        require(proof.verify(rootMintFree, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON FREE MINT ALLOWLIST");
         require(freeMints[msg.sender] + tokenQuantity <= allowance, "MINTING MORE THAN ALLOWED");
-        require(tokenQuantity + totalSupply() <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
+
+        uint256 currentSupply = totalSupply();
         
-        for(uint256 i = 0; i < tokenQuantity; i++) {
-            _mint(msg.sender, totalSupply() + 1);
+        require(tokenQuantity + currentSupply <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
+
+        for(uint256 i = 1; i <= tokenQuantity; i++) {
+            _mint(msg.sender, currentSupply + i);
         }  
         
         freeMints[msg.sender] += tokenQuantity;      
@@ -53,11 +59,14 @@ contract PMV is ERC721Enumerable, PMVMixin{
         require(saleActive, "SALE NOT ACTIVE");
         require(!presaleActive, "PRESALE ONLY RIGHT NOW");
         require(mints[msg.sender] + tokenQuantity <= maxPerWallet, "MINTING MORE THAN ALLOWED");
-        require(tokenQuantity + totalSupply() <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
         require(tokenQuantity * salePrice <= msg.value, "INCORRECT PAYMENT AMOUNT");
 
-        for(uint256 i = 0; i < tokenQuantity; i++) {
-            _mint(msg.sender, totalSupply() + 1);
+        uint256 currentSupply = totalSupply();
+
+        require(tokenQuantity + currentSupply <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
+
+        for(uint256 i = 1; i <= tokenQuantity; i++) {
+            _mint(msg.sender, currentSupply + i);
         }
 
         mints[msg.sender] += tokenQuantity;
