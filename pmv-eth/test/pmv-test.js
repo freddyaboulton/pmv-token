@@ -337,15 +337,18 @@ describe('PMV ETH Tests', function() {
 
         amount = await contract.provider.getBalance(contract.address);
         expect(amount).to.equal('60000000000000000');
-        
+
         if (test.name == 'PMVOptimized') {
-          console.log("Checking tokenOfOwnerByIndexOffChain");
+          console.log('Checking tokenOfOwnerByIndexOffChain');
           expect(
-            await contract.tokenOfOwnerByIndexOffChain(addr2.address, 0)).to.equal(3);
+              await contract.tokenOfOwnerByIndexOffChain(
+                  addr2.address, 0)).to.equal(3);
           expect(
-              await contract.tokenOfOwnerByIndexOffChain(addr1.address, 1)).to.equal(2);
+              await contract.tokenOfOwnerByIndexOffChain(
+                  addr1.address, 1)).to.equal(2);
           expect(
-                await contract.tokenOfOwnerByIndexOffChain(addr6.address, 0)).to.equal(6);
+              await contract.tokenOfOwnerByIndexOffChain(
+                  addr6.address, 0)).to.equal(6);
         }
 
         // Check the metadata is not revealed yet
