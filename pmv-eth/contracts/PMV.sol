@@ -27,7 +27,7 @@ contract PMV is ERC721Enumerable, PMVMixin{
         require(!saleActive, "SALE ACTIVE RIGHT NOW");
         require(proof.verify(root, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON ALLOWLIST");
         require(presaleMints[msg.sender] + tokenQuantity <= allowance, "MINTING MORE THAN ALLOWED");
-        require(tokenQuantity * salePrice == msg.value, "INCORRECT PAYMENT AMOUNT");
+        require(tokenQuantity * salePrice <= msg.value, "INCORRECT PAYMENT AMOUNT");
 
         uint256 currentSupply = totalSupply();
 
