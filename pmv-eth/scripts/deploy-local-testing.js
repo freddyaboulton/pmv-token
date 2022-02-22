@@ -21,12 +21,16 @@ function hashToken(account, quantity) {
 async function main() {
   const PMV = await ethers.getContractFactory('PMV');
 
+  // taken from: https://docs.chain.link/docs/vrf-contracts/v1/
   const linkToken = '0x01BE23585060835E02B77ef475b0Cc51aA1e0709';
-  const vrfCoordinator = '0x6168499c0cFfCaCD319c818142124B7A15E857ab';
-  const keyHash = '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc';
-  const linkFee = '250000000000000000';
+  const vrfCoordinator = '0xb3dCcb4Cf7a26f6cf6B120Cf5A73875B7BBc655B';
+  const keyHash =
+    '0x2ed0feb3e7fd2022120aa84fab1945545a9f2ffc9076fd6156fa96eaff4c1311';
+  const linkFee = ethers.BigNumber.from('100000000000000000');
+
   // dummy provenance hash
-  const provenanceHash = '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc';
+  const provenanceHash =
+    '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc';
 
   const [deployer, addr2, addr3, addr4] = await ethers.getSigners();
 
