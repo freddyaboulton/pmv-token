@@ -12,7 +12,7 @@ contract PMVMixin is Ownable {
     uint256 public constant maxSupply = 30;
     uint256 public maxPerTransaction = 10;
     uint public constant salePrice = 0.1 ether;
-    uint public constant presalePrice = 0.07 ether;
+    uint public constant presalePrice = 0.077 ether;
     bool public presaleActive = false;
     bool public freeMintAllowed = false; 
     bool public saleActive = false;    
