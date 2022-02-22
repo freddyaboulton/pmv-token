@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
  * the Metadata extension, but not including the Enumerable extension, which is available separately as
  * {ERC721Enumerable}.
  */
-contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721Enumerable {
+contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata {
     using Address for address;
     using Strings for uint256;
 
@@ -51,7 +51,6 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
         return
             interfaceId == type(IERC721).interfaceId ||
             interfaceId == type(IERC721Metadata).interfaceId ||
-            interfaceId == type(IERC721Enumerable).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 
@@ -434,8 +433,9 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
 
     /**
      * @dev See {IERC721Enumerable-tokenOfOwnerByIndex}.
+     * Call OffChain to not pay high gas costs.
      */
-    function tokenOfOwnerByIndex(address owner, uint256 index) public view virtual override returns (uint256) {
+    function tokenOfOwnerByIndexOffChain(address owner, uint256 index) public view virtual returns (uint256) {
         require(index < balanceOf(owner), "ERC721Enumerable: owner index out of bounds");
         uint count;
         for (uint i; i < _owners.length; i ++){
@@ -450,7 +450,7 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
     /**
      * @dev See {IERC721Enumerable-totalSupply}.
      */
-    function totalSupply() public view virtual override returns (uint256) {
+    function totalSupply() public view virtual  returns (uint256) {
         return _owners.length - _numBurned;
     }
 
@@ -464,7 +464,7 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata, IERC721En
     /**
      * @dev See {IERC721Enumerable-tokenByIndex}.
      */
-    function tokenByIndex(uint256 index) public view virtual override returns (uint256) {
+    function tokenByIndexOffChain(uint256 index) public view virtual returns (uint256) {
         require(index < ERC721Optimized.totalSupply(), "ERC721Enumerable: global index out of bounds");
         uint256 count;
 

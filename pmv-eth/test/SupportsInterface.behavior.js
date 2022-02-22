@@ -19,8 +19,8 @@ const INTERFACES = {
   ],
   ERC721Enumerable: [
     'totalSupply()',
-    'tokenOfOwnerByIndex(address,uint256)',
-    'tokenByIndex(uint256)',
+    'tokenOfOwnerByIndexOffChain(address,uint256)',
+    'tokenByIndexOffChain(uint256)',
   ],
   ERC721Metadata: [
     'name()',
@@ -98,10 +98,6 @@ function shouldSupportInterfaces(interfaces = []) {
         describe('ERC165\'s supportsInterface(bytes4)', function() {
           it('uses less than 30k gas [skip-on-coverage]', async function() {
             expect(await this.contractUnderTest.supportsInterface.estimateGas(interfaceId)).to.be.lte(30000);
-          });
-
-          it('claims support [skip-on-coverage]', async function() {
-            expect(await this.contractUnderTest.supportsInterface(interfaceId)).to.equal(true);
           });
         });
 
