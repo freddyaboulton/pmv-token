@@ -36,20 +36,29 @@ async function main() {
 
   const [deployer] = await ethers.getSigners();
 
-  // Construct merkle tree here
+  // Construct merkle tree here for WHITELIST
   const merkleEntries = [['0xE4763c199bdD01aa01c5dc4e9524c63F307e9021', 2],
   ['0x7b1C4134a8682dbee5AF7993DEc9745e11263E8f', 20],
   ['0x537a638751D3602c0fd0843272E958C78aAc2D8B', 3],
   ['0x9De6405C0C7512ee94BCB79B860668a52aa7FAd2', 1],
   [deployer.address, 1]];
-  
   const hashes = merkleEntries.map((token) => hashToken(...token));
   validTree = new MerkleTree(hashes, keccak256, {sortPairs: true});
   const root = validTree.getHexRoot();
+
+  // Create separate tree for free mint here if needed
+  // Right now using same list for presale and free mint
+
   console.log("Deploying contracts with the account:", deployer.address);
 
-  const pmv = await PMV.connect(deployer).deploy(root, 'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/');
-  const pmvOpt = await PMVOptimized.connect(deployer).deploy(root, 'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/');
+  // root is for whitelist
+  // need to add freeRoot if different
+  const pmv = await PMV.connect(deployer).deploy(root,
+    'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/',
+    root);
+  const pmvOpt = await PMVOptimized.connect(deployer).deploy(root,
+    'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/',
+    root);
 
   console.log('PMV deployed to:', pmv.address);
   console.log('PMVOptimized deployed to:', pmvOpt.address);
