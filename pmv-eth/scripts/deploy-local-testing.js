@@ -44,19 +44,19 @@ async function main() {
   await pmv.connect(deployer).setSale(true);
 
   await pmv.connect(addr3).mint(5, {
-    value: ethers.BigNumber.from('2000000000000000000'),
+    value: ethers.BigNumber.from('10000000000000000000'),
   });
 
   await pmv.connect(addr2).mint(5, {
-    value: ethers.BigNumber.from('2000000000000000000'),
+    value: ethers.BigNumber.from('10000000000000000000'),
   });
 
   await pmv.connect(deployer).mint(5, {
-    value: ethers.BigNumber.from('200000000000000000'),
+    value: ethers.BigNumber.from('1000000000000000000'),
   });
 
   await pmv.connect(addr4).mint(5, {
-    value: ethers.BigNumber.from('200000000000000000'),
+    value: ethers.BigNumber.from('1000000000000000000'),
   });
 }
 
