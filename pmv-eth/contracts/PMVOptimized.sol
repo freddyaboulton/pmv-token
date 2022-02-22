@@ -7,19 +7,28 @@ import "./ERC721Optimized.sol";
 import "./PMVMixin.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 
 
-contract PMVOptimized is PMVMixin, ERC721Optimized {
+contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
     using Strings for uint256;
     using MerkleProof for bytes32[];
 
     mapping (address => uint256) private presaleMints;
     mapping (address => uint256) private freeMints;
+    mapping (address => uint256) private mints;
+    bytes32 private s_keyHash;
+    uint256 private s_fee;
 
-    constructor(bytes32 merkleroot, string memory uri, bytes32 _rootMintFree) ERC721Optimized("PMV", "PMVTKN") {
+    constructor(bytes32 merkleroot, string memory uri, bytes32 _rootMintFree,
+                bytes32 _provenanceHash, address vrfCoordinator,
+                address link, bytes32 keyhash, uint256 fee) ERC721Optimized("PMV", "PMVTKN") VRFConsumerBase(vrfCoordinator, link){
         root = merkleroot;
         notRevealedUri = uri;
         rootMintFree = _rootMintFree;
+        provenanceHash = _provenanceHash;
+        s_keyHash = keyhash;
+        s_fee = fee;
      }
     
     function mintPresale(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external payable {
@@ -74,6 +83,19 @@ contract PMVOptimized is PMVMixin, ERC721Optimized {
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         require(_exists(tokenId), "URI query for nonexistent token");
         return _tokenURI(tokenId);
+    }
+
+    function generateRandomOffset() public onlyOwner returns (bytes32 requestId) {
+        require(LINK.balanceOf(address(this)) >= s_fee, "Not enough LINK to pay fee");
+        require(!offsetRequested, "Already generated random offset");
+        requestId = requestRandomness(s_keyHash, s_fee);
+    }
+
+    function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
+        // transform the result to a number between 1 and maxSupply inclusively
+        uint256 newOffset = (randomness % maxSupply) + 1;
+        offset = newOffset;
+        offsetRequested = true;
     }
 
 }

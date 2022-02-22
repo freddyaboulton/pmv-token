@@ -21,6 +21,9 @@ contract PMVMixin is Ownable {
     bool private revealed = false;
     bytes32 public root;
     bytes32 public rootMintFree;
+    bytes32 public provenanceHash;
+    uint256 public offset;
+    bool public offsetRequested = false;
 
     function _tokenURI(uint256 tokenId) public view virtual returns (string memory) {
 

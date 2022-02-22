@@ -21,6 +21,13 @@ function hashToken(account, quantity) {
 async function main() {
   const PMV = await ethers.getContractFactory('PMV');
 
+  const linkToken = '0x01BE23585060835E02B77ef475b0Cc51aA1e0709';
+  const vrfCoordinator = '0x6168499c0cFfCaCD319c818142124B7A15E857ab';
+  const keyHash = '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc';
+  const linkFee = '250000000000000000';
+  // dummy provenance hash
+  const provenanceHash = '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc';
+
   const [deployer, addr2, addr3, addr4] = await ethers.getSigners();
 
   // Construct merkle tree here
@@ -37,7 +44,8 @@ async function main() {
   console.log('Deploying contracts with the account:', deployer.address);
 
   const pmv = await PMV.connect(deployer).deploy(root,
-      'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/', root);
+      'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/', root,
+      provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee);
 
   console.log('PMV deployed to:', pmv.address);
 

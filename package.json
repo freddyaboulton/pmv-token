@@ -16,6 +16,7 @@
     "hardhat-gas-reporter": "^1.0.6"
   },
   "dependencies": {
+    "@chainlink/contracts": "^0.4.0",
     "@metamask/eth-sig-util": "^4.0.0",
     "@openzeppelin/contracts": "^4.4.2",
     "keccak256": "^1.0.3",
