@@ -68,7 +68,7 @@ contract PMVMixin is Ownable {
     }
 
     function withdraw() external onlyOwner {
-        payable(owner()).sendValue(address(this).balance);
+        payable(multiSigWallet).sendValue(address(this).balance);
     }
 
     function setMaxPerTransaction(uint256 _maxPerTransaction) external onlyOwner {

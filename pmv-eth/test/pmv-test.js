@@ -28,6 +28,7 @@ describe('PMV ETH Tests', function() {
   let addr5;
   let addr6;
   let addr7;
+  let addr8;
   let validTree;
 
 
@@ -45,9 +46,9 @@ describe('PMV ETH Tests', function() {
       '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc';
 
     [owner, addr1, addr2, addr3,
-      addr5, addr6, addr7] = await ethers.getSigners();
+      addr5, addr6, addr7, addr8] = await ethers.getSigners();
 
-    const multiSigWallet = owner.address;
+    const multiSigWallet = addr8.address;
 
     const merkleEntries = [[owner.address, 2],
       [addr1.address, 2],
@@ -109,7 +110,7 @@ describe('PMV ETH Tests', function() {
     testCases.forEach(function(test) {
       it(`${test.name}: Should return the multiSigWallet`, async function() {
         const contract = contracts[test.index];
-        expect(await contract.multiSigWallet()).to.be.equal(owner.address);
+        expect(await contract.multiSigWallet()).to.be.equal(addr8.address);
       });
     });
 
@@ -862,7 +863,7 @@ describe('PMV ETH Tests', function() {
 
             const tx = await contract.connect(owner).withdraw();
             const expectedAmount = ethers.BigNumber.from('2700000000000000000');
-            expect(tx).to.changeEtherBalance(owner, expectedAmount);
+            expect(tx).to.changeEtherBalance(addr8, expectedAmount);
           });
     });
 
