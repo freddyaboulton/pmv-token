@@ -327,7 +327,6 @@ describe('PMV ETH Tests', function() {
         expect(await contract.ownerOf(2)).to.equal(addr1.address);
         expect(await contract.balanceOf(addr2.address)).to.equal(1);
         expect(await contract.ownerOf(3)).to.equal(addr2.address);
-
         proof = freeTree.getHexProof(hashToken(addr5.address, 2));
         await contract.connect(addr5).mintFree(2, proof, 2);
 
@@ -338,6 +337,19 @@ describe('PMV ETH Tests', function() {
 
         amount = await contract.provider.getBalance(contract.address);
         expect(amount).to.equal('60000000000000000');
+
+        if (test.name == 'PMVOptimized') {
+          console.log('Checking tokenOfOwnerByIndexOffChain');
+          expect(
+              await contract.tokenOfOwnerByIndexOffChain(
+                  addr2.address, 0)).to.equal(3);
+          expect(
+              await contract.tokenOfOwnerByIndexOffChain(
+                  addr1.address, 1)).to.equal(2);
+          expect(
+              await contract.tokenOfOwnerByIndexOffChain(
+                  addr6.address, 0)).to.equal(6);
+        }
 
         // Check the metadata is not revealed yet
         for (let i = 1; i < 6; i++) {

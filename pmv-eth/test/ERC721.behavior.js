@@ -106,11 +106,11 @@ function shouldBehaveLikeERC721(errorPrefix, owner, newOwner, approved, anotherA
         });
 
         it('adjusts owners tokens by index', async function() {
-          if (!this.token.tokenOfOwnerByIndex) return;
+          if (!this.token.tokenOfOwnerByIndexOffChain) return;
 
-          expect(await this.token.tokenOfOwnerByIndex(this.toWhom, 0)).to.be.bignumber.equal(tokenId);
+          expect(await this.token.tokenOfOwnerByIndexOffChain(this.toWhom, 0)).to.be.bignumber.equal(tokenId);
 
-          expect(await this.token.tokenOfOwnerByIndex(owner, 0)).to.be.bignumber.not.equal(tokenId);
+          expect(await this.token.tokenOfOwnerByIndexOffChain(owner, 0)).to.be.bignumber.not.equal(tokenId);
         });
       };
 
@@ -170,9 +170,9 @@ function shouldBehaveLikeERC721(errorPrefix, owner, newOwner, approved, anotherA
           });
 
           it('keeps same tokens by index', async function() {
-            if (!this.token.tokenOfOwnerByIndex) return;
+            if (!this.token.tokenOfOwnerByIndexOffChain) return;
             const tokensListed = await Promise.all(
-                [0, 1].map((i) => this.token.tokenOfOwnerByIndex(owner, i)),
+                [0, 1].map((i) => this.token.tokenOfOwnerByIndexOffChain(owner, i)),
             );
             expect(tokensListed.map((t) => t.toNumber())).to.have.members(
                 [firstTokenId.toNumber(), secondTokenId.toNumber()],
@@ -660,17 +660,17 @@ function shouldBehaveLikeERC721Enumerable(errorPrefix, owner, newOwner, approved
       });
     });
 
-    describe('tokenOfOwnerByIndex', function() {
+    describe('tokenOfOwnerByIndexOffChain', function() {
       describe('when the given index is lower than the amount of tokens owned by the given address', function() {
         it('returns the token ID placed at the given index', async function() {
-          expect(await this.token.tokenOfOwnerByIndex(owner, 0)).to.be.bignumber.equal(firstTokenId);
+          expect(await this.token.tokenOfOwnerByIndexOffChain(owner, 0)).to.be.bignumber.equal(firstTokenId);
         });
       });
 
       describe('when the index is greater than or equal to the total tokens owned by the given address', function() {
         it('reverts', async function() {
           await expectRevert(
-              this.token.tokenOfOwnerByIndex(owner, 2), 'ERC721Enumerable: owner index out of bounds',
+              this.token.tokenOfOwnerByIndexOffChain(owner, 2), 'ERC721Enumerable: owner index out of bounds',
           );
         });
       });
@@ -678,7 +678,7 @@ function shouldBehaveLikeERC721Enumerable(errorPrefix, owner, newOwner, approved
       describe('when the given address does not own any token', function() {
         it('reverts', async function() {
           await expectRevert(
-              this.token.tokenOfOwnerByIndex(other, 0), 'ERC721Enumerable: owner index out of bounds',
+              this.token.tokenOfOwnerByIndexOffChain(other, 0), 'ERC721Enumerable: owner index out of bounds',
           );
         });
       });
@@ -692,7 +692,7 @@ function shouldBehaveLikeERC721Enumerable(errorPrefix, owner, newOwner, approved
         it('returns correct token IDs for target', async function() {
           expect(await this.token.balanceOf(other)).to.be.bignumber.equal('2');
           const tokensListed = await Promise.all(
-              [0, 1].map((i) => this.token.tokenOfOwnerByIndex(other, i)),
+              [0, 1].map((i) => this.token.tokenOfOwnerByIndexOffChain(other, i)),
           );
           expect(tokensListed.map((t) => t.toNumber())).to.have.members([firstTokenId.toNumber(),
             secondTokenId.toNumber()]);
@@ -701,16 +701,16 @@ function shouldBehaveLikeERC721Enumerable(errorPrefix, owner, newOwner, approved
         it('returns empty collection for original owner', async function() {
           expect(await this.token.balanceOf(owner)).to.be.bignumber.equal('0');
           await expectRevert(
-              this.token.tokenOfOwnerByIndex(owner, 0), 'ERC721Enumerable: owner index out of bounds',
+              this.token.tokenOfOwnerByIndexOffChain(owner, 0), 'ERC721Enumerable: owner index out of bounds',
           );
         });
       });
     });
 
-    describe('tokenByIndex', function() {
+    describe('tokenByIndexOffChain', function() {
       it('returns all tokens', async function() {
         const tokensListed = await Promise.all(
-            [0, 1].map((i) => this.token.tokenByIndex(i)),
+            [0, 1].map((i) => this.token.tokenByIndexOffChain(i)),
         );
         expect(tokensListed.map((t) => t.toNumber())).to.have.members([firstTokenId.toNumber(),
           secondTokenId.toNumber()]);
@@ -718,7 +718,7 @@ function shouldBehaveLikeERC721Enumerable(errorPrefix, owner, newOwner, approved
 
       it('reverts if index is greater than supply', async function() {
         await expectRevert(
-            this.token.tokenByIndex(2), 'ERC721Enumerable: global index out of bounds',
+            this.token.tokenByIndexOffChain(2), 'ERC721Enumerable: global index out of bounds',
         );
       });
 
@@ -726,19 +726,19 @@ function shouldBehaveLikeERC721Enumerable(errorPrefix, owner, newOwner, approved
         await this.token.mint(3, {from: owner});
         await this.token.burn(new BN(3));
         await this.token.burn(new BN(4));
-        expect(await this.token.tokenByIndex(2)).to.be.bignumber.equal('5');
+        expect(await this.token.tokenByIndexOffChain(2)).to.be.bignumber.equal('5');
       });
 
       it('returns right index after burning multiple non-consecutive tokens', async function() {
         await this.token.mint(4, {from: owner});
         await this.token.burn(new BN(3));
         await this.token.burn(new BN(5));
-        expect(await this.token.tokenByIndex(2)).to.be.bignumber.equal('4');
-        expect(await this.token.tokenByIndex(3)).to.be.bignumber.equal('6');
+        expect(await this.token.tokenByIndexOffChain(2)).to.be.bignumber.equal('4');
+        expect(await this.token.tokenByIndexOffChain(3)).to.be.bignumber.equal('6');
         await this.token.burn(new BN(1));
-        expect(await this.token.tokenByIndex(0)).to.be.bignumber.equal('2');
-        expect(await this.token.tokenByIndex(1)).to.be.bignumber.equal('4');
-        expect(await this.token.tokenByIndex(2)).to.be.bignumber.equal('6');
+        expect(await this.token.tokenByIndexOffChain(0)).to.be.bignumber.equal('2');
+        expect(await this.token.tokenByIndexOffChain(1)).to.be.bignumber.equal('4');
+        expect(await this.token.tokenByIndexOffChain(2)).to.be.bignumber.equal('6');
       });
 
       [firstTokenId, secondTokenId].forEach(function(tokenId) {
@@ -753,7 +753,7 @@ function shouldBehaveLikeERC721Enumerable(errorPrefix, owner, newOwner, approved
           expect(await this.token.totalSupply()).to.be.bignumber.equal('3');
 
           const tokensListed = await Promise.all(
-              [0, 1, 2].map((i) => this.token.tokenByIndex(i)),
+              [0, 1, 2].map((i) => this.token.tokenByIndexOffChain(i)),
           );
           const expectedTokens = [firstTokenId, secondTokenId, newTokenId, anotherNewTokenId].filter(
               (x) => (x !== tokenId),
@@ -777,11 +777,11 @@ function shouldBehaveLikeERC721Enumerable(errorPrefix, owner, newOwner, approved
       });
 
       it('adjusts owner tokens by index', async function() {
-        expect(await this.token.tokenOfOwnerByIndex(owner, 0)).to.be.bignumber.equal(firstTokenId);
+        expect(await this.token.tokenOfOwnerByIndexOffChain(owner, 0)).to.be.bignumber.equal(firstTokenId);
       });
 
       it('adjusts all tokens list', async function() {
-        expect(await this.token.tokenByIndex(0)).to.be.bignumber.equal(firstTokenId);
+        expect(await this.token.tokenByIndexOffChain(0)).to.be.bignumber.equal(firstTokenId);
       });
     });
   });
@@ -805,18 +805,18 @@ function shouldBehaveLikeERC721Enumerable(errorPrefix, owner, newOwner, approved
         });
 
         it('removes that token from the token list of the owner', async function() {
-          expect(await this.token.tokenOfOwnerByIndex(owner, 0)).to.be.bignumber.equal(secondTokenId);
+          expect(await this.token.tokenOfOwnerByIndexOffChain(owner, 0)).to.be.bignumber.equal(secondTokenId);
         });
 
         it('adjusts all tokens list', async function() {
-          expect(await this.token.tokenByIndex(0)).to.be.bignumber.equal(secondTokenId);
+          expect(await this.token.tokenByIndexOffChain(0)).to.be.bignumber.equal(secondTokenId);
         });
 
         it('burns all tokens', async function() {
           await this.token.burn(secondTokenId, {from: owner});
           expect(await this.token.totalSupply()).to.be.bignumber.equal('0');
           await expectRevert(
-              this.token.tokenByIndex(0), 'ERC721Enumerable: global index out of bounds',
+              this.token.tokenByIndexOffChain(0), 'ERC721Enumerable: global index out of bounds',
           );
         });
       });
