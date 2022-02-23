@@ -132,6 +132,27 @@ describe('PMV ETH Tests', function() {
     });
 
     testCases.forEach(function(test) {
+      it(`${test.name}: Should not let non-owners change the prices`,
+          async function() {
+            const contract = contracts[test.index];
+            try {
+              await contract.connect(addr1).setPrice(
+                  ethers.BigNumber.from('87000000000000000'));
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('caller is not the owner');
+            }
+            try {
+              await contract.connect(addr1).setPresalePrice(
+                  ethers.BigNumber.from('90000000000000000'));
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('caller is not the owner');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
       it(`${test.name}: Should not let non-owners change the maxPerTransaction`,
           async function() {
             const contract = contracts[test.index];
@@ -845,6 +866,31 @@ describe('PMV ETH Tests', function() {
               expect(error.message).to.contain(
                   'MINTING MORE THAN ALLOWED IN A SINGLE TRANSACTION');
             }
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should let owner change prices`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setPresale(true);
+            await contract.connect(owner).setPresalePrice(
+                ethers.BigNumber.from('2000000000000000'));
+            await contract.connect(owner).setPrice(
+                ethers.BigNumber.from('2000000000000000'));
+            const proof = validTree.getHexProof(hashToken(addr3.address, 3));
+            await contract.connect(addr3).mintPresale(3, proof, 1, {
+              value: ethers.BigNumber.from('2000000000000000'),
+            });
+            expect(await contract.balanceOf(addr3.address)).to.equal(1);
+            await contract.connect(owner).setSale(true);
+            await contract.connect(owner).setPresale(false);
+
+            await contract.connect(addr3).mint(10, {
+              value: ethers.BigNumber.from('20000000000000000'),
+            });
+
+            expect(await contract.balanceOf(addr3.address)).to.equal(11);
           });
     });
   });
