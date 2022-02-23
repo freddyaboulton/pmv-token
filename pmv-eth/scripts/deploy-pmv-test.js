@@ -21,6 +21,7 @@ function hashToken(account, quantity) {
   return Buffer.from(hash, 'hex');
 }
 
+// run with npx hardhat run scripts/deploy-pmv-test.js --network rinkeby
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -36,6 +37,7 @@ async function main() {
 
   const [deployer] = await ethers.getSigners();
 
+  // taken from: https://docs.chain.link/docs/vrf-contracts/v1/
   const linkToken = '0x01BE23585060835E02B77ef475b0Cc51aA1e0709';
   const vrfCoordinator = '0xb3dCcb4Cf7a26f6cf6B120Cf5A73875B7BBc655B';
   const keyHash = 
