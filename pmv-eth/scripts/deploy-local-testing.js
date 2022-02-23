@@ -51,7 +51,8 @@ async function main() {
 
   const pmv = await PMV.connect(deployer).deploy(root,
       'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/', root,
-      provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee, multiSigWallet);
+      provenanceHash, vrfCoordinator, linkToken, keyHash,
+      linkFee, multiSigWallet);
 
   console.log('PMV deployed to:', pmv.address);
 
