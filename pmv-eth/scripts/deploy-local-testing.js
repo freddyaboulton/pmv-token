@@ -32,9 +32,9 @@ async function main() {
   const provenanceHash =
     '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc';
 
-  const multiSigWallet = deployer.address;
-
   const [deployer, addr2, addr3, addr4] = await ethers.getSigners();
+
+  const multiSigWallet = deployer.address;
 
   // Construct merkle tree here
   const merkleEntries = [[deployer.address, 2],

@@ -50,14 +50,14 @@ describe('server-verify', function() {
       solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
       ethAddress: publicKey1,
       signature: signature,
-      tokenIndex: 11},
+      tokenIndex: 12},
     );
     expect(res.status).to.equal(200);
     expect(res.data.isVerified).to.be.true;
     expect(res.data.isOwner).to.be.true;
     expect(res.data.isApproved).to.be.true;
 
-    const verifiedRes = await axios.get('http://localhost:3000/claim/11');
+    const verifiedRes = await axios.get('http://localhost:3000/claim/12');
     expect(verifiedRes.data.isClaimed).to.be.true;
   });
 
@@ -69,7 +69,7 @@ describe('server-verify', function() {
       solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
       ethAddress: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
       signature: signature,
-      tokenIndex: 12},
+      tokenIndex: 13},
     );
     expect(res.status).to.equal(200);
     expect(res.data.isVerified).to.be.true;
@@ -78,7 +78,7 @@ describe('server-verify', function() {
     expect(res.data.mintAddress).to.not.be.undefined;
     expect(res.data.transaction).to.not.be.undefined;
 
-    const verifiedRes = await axios.get('http://localhost:3000/claim/12');
+    const verifiedRes = await axios.get('http://localhost:3000/claim/13');
     expect(verifiedRes.data.isClaimed).to.be.true;
   });
 
@@ -90,7 +90,7 @@ describe('server-verify', function() {
       solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
       ethAddress: publicKey2,
       signature: signature,
-      tokenIndex: 6,
+      tokenIndex: 7,
     });
     expect(res.status).to.equal(200);
     expect(res.data.isVerified).to.be.true;
@@ -99,7 +99,7 @@ describe('server-verify', function() {
     expect(res.data.mintAddress).to.not.be.undefined;
     expect(res.data.transaction).to.not.be.undefined;
 
-    const verifiedRes = await axios.get('http://localhost:3000/claim/6');
+    const verifiedRes = await axios.get('http://localhost:3000/claim/7');
     expect(verifiedRes.data.isClaimed).to.be.true;
   });
 
@@ -111,7 +111,7 @@ describe('server-verify', function() {
       solAddress: '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5',
       ethAddress: publicKey3,
       signature: signature,
-      tokenIndex: 1,
+      tokenIndex: 2,
     });
     expect(res.status).to.equal(200);
     expect(res.data.isVerified).to.be.true;
@@ -133,7 +133,7 @@ describe('server-verify', function() {
     expect(metadata.data.isMutable).to.equal(0);
     expect(res.data.transaction).to.not.be.undefined;
 
-    const verifiedRes = await axios.get('http://localhost:3000/claim/1');
+    const verifiedRes = await axios.get('http://localhost:3000/claim/2');
     expect(verifiedRes.data.isClaimed).to.be.true;
   });
 
@@ -145,7 +145,7 @@ describe('server-verify', function() {
       solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
       ethAddress: publicKey4,
       signature: signature,
-      tokenIndex: 20,
+      tokenIndex: 21,
     });
     expect(res.status).to.equal(200);
     expect(res.data.isVerified).to.be.true;
@@ -154,7 +154,7 @@ describe('server-verify', function() {
     expect(res.data.mintAddress).to.not.be.undefined;
     expect(res.data.transaction).to.not.be.undefined;
 
-    const verifiedRes = await axios.get('http://localhost:3000/claim/20');
+    const verifiedRes = await axios.get('http://localhost:3000/claim/21');
     expect(verifiedRes.data.isClaimed).to.be.true;
   });
 
@@ -166,7 +166,7 @@ describe('server-verify', function() {
       solAddress: '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5',
       ethAddress: publicKey1,
       signature: signature,
-      tokenIndex: 11,
+      tokenIndex: 12,
     });
     expect(res.status).to.equal(403);
     expect(res.data.errors[0].msg).to.equal('Account not authorized to claim');
@@ -183,7 +183,7 @@ describe('server-verify', function() {
       solAddress: '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5',
       ethAddress: publicKey3,
       signature: signature,
-      tokenIndex: 14,
+      tokenIndex: 15,
     });
     expect(res.status).to.equal(403);
     expect(res.data.errors[0].msg).to.equal('Account not authorized to claim');
@@ -200,7 +200,7 @@ describe('server-verify', function() {
       solAddress: '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5',
       ethAddress: 'fooAddress',
       signature: signature,
-      tokenIndex: 14,
+      tokenIndex: 15,
     });
     expect(res.status).to.equal(422);
     expect(res.data.errors.length).to.equal(1);
@@ -215,7 +215,7 @@ describe('server-verify', function() {
       solAddress: '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5',
       ethAddress: 5,
       signature: signature,
-      tokenIndex: 14,
+      tokenIndex: 15,
     });
     expect(res.status).to.equal(422);
     expect(res.data.errors.length).to.equal(1);
@@ -230,7 +230,7 @@ describe('server-verify', function() {
       solAddress: 'foo-Address',
       ethAddress: publicKey3,
       signature: signature,
-      tokenIndex: 14,
+      tokenIndex: 15,
     });
     expect(res.status).to.equal(422);
     expect(res.data.errors.length).to.equal(1);
@@ -245,7 +245,7 @@ describe('server-verify', function() {
       solAddress: publicKey3,
       ethAddress: publicKey3,
       signature: signature,
-      tokenIndex: 14,
+      tokenIndex: 15,
     });
     expect(res.status).to.equal(422);
     expect(res.data.errors.length).to.equal(1);
@@ -260,7 +260,7 @@ describe('server-verify', function() {
       solAddress: '0x5faaf2315678afecb367f032d93f642f64180aa3',
       ethAddress: publicKey3,
       signature: signature,
-      tokenIndex: 14,
+      tokenIndex: 15,
     });
     expect(res.status).to.equal(422);
     expect(res.data.errors.length).to.equal(1);
@@ -290,11 +290,11 @@ describe('server-verify', function() {
       solAddress: '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9',
       ethAddress: publicKey3,
       signature: signature,
-      tokenIndex: 21,
+      tokenIndex: 22,
     });
     expect(res.status).to.equal(422);
     expect(res.data.errors.length).to.equal(1);
-    const msg = '21 has not been minted yet.';
+    const msg = '22 has not been minted yet.';
     expect(res.data.errors[0].msg).to.equal(msg);
   });
 
@@ -389,7 +389,7 @@ describe('server-verify', function() {
 
   it('Should correctly display tokenIndex that has not been claimed',
       async function() {
-        const res = await axios.get('http://localhost:3000/claim/21');
+        const res = await axios.get('http://localhost:3000/claim/22');
         expect(res.data.isClaimed).to.be.false;
       });
 });
