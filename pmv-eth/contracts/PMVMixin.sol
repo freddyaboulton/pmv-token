@@ -10,8 +10,9 @@ contract PMVMixin is Ownable {
     using Strings for uint256;
 
     uint256 public constant maxSupply = 30;
-    uint256 public maxPerWallet = 10;
-    uint public constant salePrice = 0.02 ether;
+    uint256 public maxPerTransaction = 10;
+    uint public salePrice = 0.1 ether;
+    uint public presalePrice = 0.077 ether;
     bool public presaleActive = false;
     bool public freeMintAllowed = false; 
     bool public saleActive = false;    
@@ -64,8 +65,16 @@ contract PMVMixin is Ownable {
         payable(msg.sender).transfer(address(this).balance);
     }
 
-    function setMaxPerWallet(uint256 _maxPerWallet) external onlyOwner {
-        require(_maxPerWallet > 0, "maxPerWallet should be positive");
-        maxPerWallet = _maxPerWallet;
+    function setMaxPerTransaction(uint256 _maxPerTransaction) external onlyOwner {
+        require(_maxPerTransaction > 0, "maxPerTransaction should be positive");
+        maxPerTransaction = _maxPerTransaction;
+    }
+
+    function setPrice(uint _salePrice) external onlyOwner {
+        salePrice = _salePrice;
+    }
+
+    function setPresalePrice(uint _presalePrice) external onlyOwner {
+        presalePrice = _presalePrice;
     }
 }

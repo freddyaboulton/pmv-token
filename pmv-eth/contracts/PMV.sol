@@ -14,7 +14,6 @@ contract PMV is ERC721Enumerable, PMVMixin{
 
     mapping (address => uint256) private presaleMints;
     mapping (address => uint256) private freeMints;
-    mapping (address => uint256) private mints;    
 
     constructor(bytes32 merkleroot, string memory uri, bytes32 _rootMintFree) ERC721("PMV", "PMVTKN") {
         root = merkleroot;
@@ -27,7 +26,7 @@ contract PMV is ERC721Enumerable, PMVMixin{
         require(!saleActive, "SALE ACTIVE RIGHT NOW");
         require(proof.verify(root, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON ALLOWLIST");
         require(presaleMints[msg.sender] + tokenQuantity <= allowance, "MINTING MORE THAN ALLOWED");
-        require(tokenQuantity * salePrice <= msg.value, "INCORRECT PAYMENT AMOUNT");
+        require(tokenQuantity * presalePrice <= msg.value, "INCORRECT PAYMENT AMOUNT");
 
         uint256 currentSupply = totalSupply();
         require(tokenQuantity + currentSupply <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
@@ -58,7 +57,7 @@ contract PMV is ERC721Enumerable, PMVMixin{
     function mint(uint256 tokenQuantity) external payable {
         require(saleActive, "SALE NOT ACTIVE");
         require(!presaleActive, "PRESALE ONLY RIGHT NOW");
-        require(mints[msg.sender] + tokenQuantity <= maxPerWallet, "MINTING MORE THAN ALLOWED");
+        require(tokenQuantity <= maxPerTransaction, "MINTING MORE THAN ALLOWED IN A SINGLE TRANSACTION");
         require(tokenQuantity * salePrice <= msg.value, "INCORRECT PAYMENT AMOUNT");
 
         uint256 currentSupply = totalSupply();
@@ -68,8 +67,6 @@ contract PMV is ERC721Enumerable, PMVMixin{
         for(uint256 i = 1; i <= tokenQuantity; i++) {
             _mint(msg.sender, currentSupply + i);
         }
-
-        mints[msg.sender] += tokenQuantity;
 
     }
     
