@@ -32,6 +32,8 @@ async function main() {
   const provenanceHash =
     '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc';
 
+  const multiSigWallet = deployer.address;
+
   const [deployer, addr2, addr3, addr4] = await ethers.getSigners();
 
   // Construct merkle tree here
@@ -49,7 +51,7 @@ async function main() {
 
   const pmv = await PMV.connect(deployer).deploy(root,
       'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/', root,
-      provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee);
+      provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee, multiSigWallet);
 
   console.log('PMV deployed to:', pmv.address);
 

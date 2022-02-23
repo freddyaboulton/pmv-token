@@ -21,13 +21,17 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
 
     constructor(bytes32 merkleroot, string memory uri, bytes32 _rootMintFree, bytes32 _provenanceHash,
                 address vrfCoordinator, address link,
-                bytes32 keyhash, uint256 fee) ERC721("PMV", "PMVTKN") VRFConsumerBase(vrfCoordinator, link) {
+                bytes32 keyhash, uint256 fee, address _multiSigWallet) ERC721("PMV", "PMVTKN") VRFConsumerBase(vrfCoordinator, link) {
         root = merkleroot;
         notRevealedUri = uri;
         rootMintFree = _rootMintFree;
         provenanceHash = _provenanceHash;
         s_keyHash = keyhash;
         s_fee = fee;
+        multiSigWallet = _multiSigWallet;
+
+        _mint(msg.sender, 1);
+
      }
     
     function mintPresale(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external payable {

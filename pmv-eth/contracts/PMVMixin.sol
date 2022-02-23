@@ -5,9 +5,11 @@ pragma solidity ^0.8.0;
 
 import "./ERC721Optimized.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 contract PMVMixin is Ownable {
     using Strings for uint256;
+    using Address for address payable;
 
     uint256 public constant maxSupply = 30;
     uint256 public maxPerTransaction = 10;
@@ -24,6 +26,7 @@ contract PMVMixin is Ownable {
     bytes32 public provenanceHash;
     uint256 public offset;
     bool public offsetRequested = false;
+    address public multiSigWallet;
 
     function _tokenURI(uint256 tokenId) public view virtual returns (string memory) {
 
@@ -65,7 +68,7 @@ contract PMVMixin is Ownable {
     }
 
     function withdraw() external onlyOwner {
-        payable(msg.sender).transfer(address(this).balance);
+        payable(owner()).sendValue(address(this).balance);
     }
 
     function setMaxPerTransaction(uint256 _maxPerTransaction) external onlyOwner {
