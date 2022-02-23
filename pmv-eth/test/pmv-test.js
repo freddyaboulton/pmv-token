@@ -35,6 +35,15 @@ describe('PMV ETH Tests', function() {
     const PMV = await ethers.getContractFactory('PMV');
     const PMVOptimized = await ethers.getContractFactory('PMVOptimized');
 
+    const linkToken = '0x01BE23585060835E02B77ef475b0Cc51aA1e0709';
+    const vrfCoordinator = '0x6168499c0cFfCaCD319c818142124B7A15E857ab';
+    const keyHash =
+      '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc';
+    const linkFee = '250000000000000000';
+    // dummy provenance hash
+    const provenanceHash =
+      '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc';
+
     [owner, addr1, addr2, addr3,
       addr5, addr6, addr7] = await ethers.getSigners();
 
@@ -56,10 +65,12 @@ describe('PMV ETH Tests', function() {
     freeTree = new MerkleTree(freeHashes, keccak256, {sortPairs: true});
     const rootMintFree = freeTree.getHexRoot();
 
-    pmv = await PMV.connect(owner).deploy(root, 'https://not-real-uri.com/', rootMintFree);
+    pmv = await PMV.connect(owner).deploy(root, 'https://not-real-uri.com/', rootMintFree,
+        provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee);
     await pmv.deployed();
 
-    pmvOptimized = await PMVOptimized.connect(owner).deploy(root, 'https://not-real-uri.com/', rootMintFree);
+    pmvOptimized = await PMVOptimized.connect(owner).deploy(root, 'https://not-real-uri.com/', rootMintFree,
+        provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee);
     await pmvOptimized.deployed();
     contracts = [pmv, pmvOptimized];
   });
@@ -72,6 +83,22 @@ describe('PMV ETH Tests', function() {
       it(`${test.name}: Should return the total supply`, async function() {
         const contract = contracts[test.index];
         expect(await contract.maxSupply()).to.equal(30);
+      });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should return the provenance hash`, async function() {
+        const contract = contracts[test.index];
+        expect(await contract.provenanceHash()).to.equal(
+            '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc', // eslint-disable-line max-len
+        );
+      });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should return the offset`, async function() {
+        const contract = contracts[test.index];
+        expect(await contract.offset()).to.be.equal(0);
       });
     });
 
