@@ -1082,5 +1082,54 @@ describe('PMV ETH Tests', function() {
             expect(await contract.balanceOf(addr3.address)).to.equal(11);
           });
     });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should list all tokens owned by address`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setSale(true);
+
+            await contract.connect(addr6).mint(2, {
+              value: ethers.BigNumber.from('200000000000000000'),
+            });
+            await contract.connect(addr5).mint(3, {
+              value: ethers.BigNumber.from('300000000000000000'),
+            });
+            await contract.connect(addr6).mint(1, {
+              value: ethers.BigNumber.from('100000000000000000'),
+            });
+            await contract.connect(addr7).mint(1, {
+              value: ethers.BigNumber.from('100000000000000000'),
+            });
+            await contract.connect(addr5).mint(2, {
+              value: ethers.BigNumber.from('200000000000000000'),
+            });
+
+            const tokensOf6 = await contract.tokensOfOwnerOffChain(
+                addr6.address);
+            expect(tokensOf6.length).to.equal(3);
+            expect(tokensOf6[0]).to.equal(1);
+            expect(tokensOf6[1]).to.equal(2);
+            expect(tokensOf6[2]).to.equal(6);
+
+            const tokensOf5 = await contract.tokensOfOwnerOffChain(
+                addr5.address);
+            expect(tokensOf5.length).to.equal(5);
+            expect(tokensOf5[0]).to.equal(3);
+            expect(tokensOf5[1]).to.equal(4);
+            expect(tokensOf5[2]).to.equal(5);
+            expect(tokensOf5[3]).to.equal(8);
+            expect(tokensOf5[4]).to.equal(9);
+
+            const tokensOf7 = await contract.tokensOfOwnerOffChain(
+                addr7.address);
+            expect(tokensOf7.length).to.equal(1);
+            expect(tokensOf7[0]).to.equal(7);
+
+            const tokensOfNonOwner = await contract.tokensOfOwnerOffChain(
+                addr1.address);
+            expect(tokensOfNonOwner.length).to.equal(0);
+          });
+    });
   });
 });
