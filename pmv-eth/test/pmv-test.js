@@ -30,11 +30,14 @@ describe('PMV ETH Tests', function() {
   let addr7;
   let addr8;
   let validTree;
+  let minter;
+  let multiSigWallet;
 
 
   beforeEach(async function() {
     const PMV = await ethers.getContractFactory('PMV');
     const PMVOptimized = await ethers.getContractFactory('PMVOptimized');
+    const Minter = await ethers.getContractFactory('Minter');
 
     const linkToken = '0x01BE23585060835E02B77ef475b0Cc51aA1e0709';
     const vrfCoordinator = '0x6168499c0cFfCaCD319c818142124B7A15E857ab';
@@ -48,7 +51,7 @@ describe('PMV ETH Tests', function() {
     [owner, addr1, addr2, addr3,
       addr5, addr6, addr7, addr8] = await ethers.getSigners();
 
-    const multiSigWallet = addr8.address;
+    multiSigWallet = addr8.address;
 
     const merkleEntries = [[owner.address, 2],
       [addr1.address, 2],
@@ -77,6 +80,9 @@ describe('PMV ETH Tests', function() {
         provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee,
         multiSigWallet);
     await pmvOptimized.deployed();
+
+    minter = await Minter.connect(owner).deploy();
+    await minter.deployed();
     contracts = [pmv, pmvOptimized];
   });
 
@@ -110,7 +116,7 @@ describe('PMV ETH Tests', function() {
     testCases.forEach(function(test) {
       it(`${test.name}: Should return the multiSigWallet`, async function() {
         const contract = contracts[test.index];
-        expect(await contract.multiSigWallet()).to.be.equal(addr8.address);
+        expect(await contract.multiSigWallet()).to.be.equal(multiSigWallet);
       });
     });
 
@@ -359,6 +365,80 @@ describe('PMV ETH Tests', function() {
         const contract = contracts[test.index];
         await contract.connect(owner).setURIStatus(true, 'https://the-real-doman.org');
       });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should not let non-owners call ownerMint`,
+          async function() {
+            const contract = contracts[test.index];
+            try {
+              await contract.connect(addr1).ownerMint(10);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('caller is not the owner');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should let owner set letContractMint`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setLetContractMint(true);
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should not let non-owners call letContractMint`,
+          async function() {
+            const contract = contracts[test.index];
+            try {
+              await contract.connect(addr1).setLetContractMint(true);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('caller is not the owner');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should let owner call ownerMint`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).ownerMint(3);
+            expect(await contract.balanceOf(multiSigWallet)).to.equal(3);
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should not let contracts mint by default`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setSale(true);
+            await minter.setPMVAddress(contract.address);
+            try {
+              await minter.connect(owner).mint({
+                value: ethers.BigNumber.from('200000000000000000'),
+              });
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain(
+                  'CONTRACT NOT ALLOWED TO MINT IN PUBLIC SALE');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should let contracts mint if owner allows`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setSale(true);
+            await contract.connect(owner).setLetContractMint(true);
+            await minter.setPMVAddress(contract.address);
+            await minter.connect(owner).mint({
+              value: ethers.BigNumber.from('200000000000000000'),
+            });
+          });
     });
 
     testCases.forEach(function(test) {

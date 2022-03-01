@@ -69,6 +69,9 @@ contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
     }
 
     function mint(uint256 tokenQuantity) external payable {
+        if (!letContractMint){
+            require(msg.sender == tx.origin, "CONTRACT NOT ALLOWED TO MINT IN PUBLIC SALE");
+        }
         require(saleActive, "SALE NOT ACTIVE");
         require(!presaleActive, "PRESALE ONLY RIGHT NOW");
         require(tokenQuantity <= maxPerTransaction, "MINTING MORE THAN ALLOWED IN A SINGLE TRANSACTION");
@@ -80,6 +83,17 @@ contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
 
         for(uint256 i = 1; i <= tokenQuantity; i++) {
             _mint(msg.sender, currentSupply + i);
+        }
+    }
+
+
+    function ownerMint(uint256 tokenQuantity) external onlyOwner {
+        require(tokenQuantity <= maxPerTransaction, "MINTING MORE THAN ALLOWED IN A SINGLE TRANSACTION");
+        uint256 currentSupply = totalNonBurnedSupply();
+        require(tokenQuantity + currentSupply <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
+        
+        for(uint256 i = 1; i <= tokenQuantity; i++) {
+            _mint(multiSigWallet, currentSupply + i);
         }
     }
 
