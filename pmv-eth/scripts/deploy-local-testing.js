@@ -57,6 +57,8 @@ async function main() {
   console.log('PMV deployed to:', pmv.address);
 
   await pmv.connect(deployer).setSale(true);
+  await pmv.connect(deployer).setOwnerMintBuffer(0);
+  await pmv.connect(deployer).ownerMint(1);
 
   await pmv.connect(addr3).mint(5, {
     value: ethers.BigNumber.from('10000000000000000000'),

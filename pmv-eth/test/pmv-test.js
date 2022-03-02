@@ -75,11 +75,15 @@ describe('PMV ETH Tests', function() {
         provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee,
         multiSigWallet);
     await pmv.deployed();
+    await pmv.connect(owner).setOwnerMintBuffer(0);
+    await pmv.connect(owner).ownerMint(1);
 
     pmvOptimized = await PMVOptimized.connect(owner).deploy(root, 'https://not-real-uri.com/', rootMintFree,
         provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee,
         multiSigWallet);
     await pmvOptimized.deployed();
+    await pmvOptimized.connect(owner).setOwnerMintBuffer(0);
+    await pmvOptimized.connect(owner).ownerMint(1);
 
     minter = await Minter.connect(owner).deploy();
     await minter.deployed();
@@ -124,7 +128,7 @@ describe('PMV ETH Tests', function() {
       it(`${test.name}: Should mint first token on init`, async function() {
         const contract = contracts[test.index];
         expect(await contract.totalSupply()).to.be.equal(1);
-        expect(await contract.ownerOf(1)).to.be.equal(owner.address);
+        expect(await contract.ownerOf(1)).to.be.equal(multiSigWallet);
       });
     });
 
@@ -177,6 +181,19 @@ describe('PMV ETH Tests', function() {
             }
             try {
               await contract.connect(addr1).setRootMintFree(newRoot);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('caller is not the owner');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should not let non-owners change the ownerMintBuffer`,
+          async function() {
+            const contract = contracts[test.index];
+            try {
+              await contract.connect(addr1).setOwnerMintBuffer(30);
               expect(false).to.be.true;
             } catch (error) {
               expect(error.message).to.contain('caller is not the owner');
@@ -406,7 +423,7 @@ describe('PMV ETH Tests', function() {
           async function() {
             const contract = contracts[test.index];
             await contract.connect(owner).ownerMint(3);
-            expect(await contract.balanceOf(multiSigWallet)).to.equal(3);
+            expect(await contract.balanceOf(multiSigWallet)).to.equal(4);
           });
     });
 
@@ -768,7 +785,7 @@ describe('PMV ETH Tests', function() {
               value: ethers.BigNumber.from('200000000000000000'),
             });
             // because mint token 1 on init
-            expect(await contract.balanceOf(owner.address)).to.equal(3);
+            expect(await contract.balanceOf(owner.address)).to.equal(2);
 
             try {
               await contract.connect(addr5).mint(2, {
@@ -797,6 +814,51 @@ describe('PMV ETH Tests', function() {
           });
     });
 
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should enforce ownerMintBuffer for ownerMint`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setSale(true);
+            await contract.connect(owner).setOwnerMintBuffer(5);
+
+            await contract.connect(addr7).mint(10, {
+              value: ethers.BigNumber.from('1000000000000000000'),
+            });
+
+            await contract.connect(addr1).mint(10, {
+              value: ethers.BigNumber.from('1000000000000000000'),
+            });
+
+            await contract.connect(addr2).mint(4, {
+              value: ethers.BigNumber.from('400000000000000000'),
+            });
+
+            try {
+              await contract.connect(owner).ownerMint(2);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
+            }
+          });
+    });
+
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should enforce ownerMintBuffer for ownerMint pt 2`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setOwnerMintBuffer(25);
+
+            try {
+              await contract.connect(owner).ownerMint(10);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
+            }
+            // Use 4 because we call ownerMint once in the pre-test hook
+            await contract.connect(owner).ownerMint(4);
+          });
+    });
 
     testCases.forEach(function(test) {
       it(`${test.name}: Should enfore maxSupply for presaleMint`,

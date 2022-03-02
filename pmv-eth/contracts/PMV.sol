@@ -29,9 +29,6 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
         s_keyHash = keyhash;
         s_fee = fee;
         multiSigWallet = _multiSigWallet;
-
-        _mint(msg.sender, 1);
-
      }
     
     function mintPresale(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external payable {
@@ -87,9 +84,8 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
     }
 
     function ownerMint(uint256 tokenQuantity) external onlyOwner {
-        require(tokenQuantity <= maxPerTransaction, "MINTING MORE THAN ALLOWED IN A SINGLE TRANSACTION");
         uint256 currentSupply = totalSupply();
-        require(tokenQuantity + currentSupply <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
+        require(tokenQuantity + currentSupply <= maxSupply - ownerMintBuffer, "NOT ENOUGH LEFT IN STOCK");
         
         for(uint256 i = 1; i <= tokenQuantity; i++) {
             _mint(multiSigWallet, currentSupply + i);

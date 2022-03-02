@@ -28,6 +28,7 @@ contract PMVMixin is Ownable {
     bool public offsetRequested = false;
     address public multiSigWallet;
     bool public letContractMint = false;
+    uint256 public ownerMintBuffer = 200;
 
     function _tokenURI(uint256 tokenId) public view virtual returns (string memory) {
 
@@ -87,5 +88,9 @@ contract PMVMixin is Ownable {
 
     function setLetContractMint(bool _letContractMint) external onlyOwner {
         letContractMint = _letContractMint;
+    }
+
+    function setOwnerMintBuffer(uint256 _ownerMintBuffer) external onlyOwner {
+        ownerMintBuffer = _ownerMintBuffer;
     }
 }
