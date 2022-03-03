@@ -32,7 +32,7 @@ contract ERC721EnumerableMock is ERC721Optimized {
 
     function mint(uint256 quantity) public {
         for(uint256 i = 0; i < quantity; i++) {
-            _safeMint(msg.sender, totalNonBurnedSupply() + 1);
+            _mint(msg.sender, totalNonBurnedSupply() + 1);
         }
     }
 

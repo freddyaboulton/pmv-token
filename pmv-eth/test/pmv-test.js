@@ -1010,6 +1010,94 @@ describe('PMV ETH Tests', function() {
     });
 
     testCases.forEach(function(test) {
+      it(`${test.name}: Should let owner of token burn`,
+          async function() {
+            if (test.name == 'PMV') {
+              return this.skip(); // eslint-disable-line no-invalid-this
+            }
+            const contract = contracts[test.index];
+            await contract.connect(owner).setSale(true);
+            await contract.connect(owner).setAllowBurning(true);
+
+            await contract.connect(addr7).mint(10, {
+              value: ethers.BigNumber.from('1000000000000000000'),
+            });
+            expect(await contract.balanceOf(addr7.address)).to.equal(10);
+
+            await contract.connect(addr7).burn(7);
+            expect(await contract.balanceOf(addr7.address)).to.equal(9);
+            // seventh index
+            expect(await contract.tokenOfOwnerByIndexOffChain(
+                addr7.address, 7)).to.equal(10);
+
+            await contract.connect(addr1).mint(10, {
+              value: ethers.BigNumber.from('1000000000000000000'),
+            });
+            expect(await contract.balanceOf(addr1.address)).to.equal(10);
+            expect(await contract.totalSupply()).to.equal(20);
+            expect(await contract.totalNonBurnedSupply()).to.equal(21);
+            expect(await contract.tokenByIndexOffChain(17),
+            ).to.equal(19);
+            expect(await contract.tokenOfOwnerByIndexOffChain(
+                addr1.address, 2)).to.equal(14);
+            await contract.connect(addr1).burn(14);
+            expect(await contract.tokenOfOwnerByIndexOffChain(
+                addr1.address, 2)).to.equal(15);
+            expect(await contract.tokenOfOwnerByIndexOffChain(
+                addr1.address, 4)).to.equal(17);
+            expect(await contract.tokenByIndexOffChain(17)).to.equal(20);
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should let owner of token burn pt2`,
+          async function() {
+            if (test.name == 'PMV') {
+              return this.skip(); // eslint-disable-line no-invalid-this
+            }
+            const contract = contracts[test.index];
+            await contract.connect(owner).setAllowBurning(true);
+            await contract.connect(owner).setSale(true);
+
+            await contract.connect(addr7).mint(10, {
+              value: ethers.BigNumber.from('1000000000000000000'),
+            });
+            expect(await contract.balanceOf(addr7.address)).to.equal(10);
+
+            await contract.connect(addr7).burn(7);
+            await contract.connect(addr7).burn(5);
+            expect(await contract.balanceOf(addr7.address)).to.equal(8);
+            // seventh index
+            expect(await contract.tokenOfOwnerByIndexOffChain(
+                addr7.address, 7)).to.equal(11);
+
+            await contract.connect(addr1).mint(10, {
+              value: ethers.BigNumber.from('1000000000000000000'),
+            });
+            expect(await contract.balanceOf(addr1.address)).to.equal(10);
+            expect(await contract.totalSupply()).to.equal(19);
+            expect(await contract.totalNonBurnedSupply()).to.equal(21);
+            expect(await contract.tokenByIndexOffChain(17),
+            ).to.equal(20);
+            expect(await contract.tokenOfOwnerByIndexOffChain(
+                addr1.address, 2)).to.equal(14);
+            await contract.connect(addr1).burn(14);
+            expect(await contract.tokenOfOwnerByIndexOffChain(
+                addr1.address, 2)).to.equal(15);
+            expect(await contract.tokenOfOwnerByIndexOffChain(
+                addr1.address, 4)).to.equal(17);
+            expect(await contract.tokenByIndexOffChain(16)).to.equal(20);
+
+            const tokensOf7 = await contract.tokensOfOwnerOffChain(
+                addr7.address);
+            expect(tokensOf7.length).to.equal(8);
+            expect(tokensOf7[0]).to.equal(2);
+            expect(tokensOf7[3]).to.equal(6);
+            expect(tokensOf7[7]).to.equal(11);
+          });
+    });
+
+    testCases.forEach(function(test) {
       it(`${test.name}: Should not let non-owner withdraw balance`,
           async function() {
             const contract = contracts[test.index];
@@ -1021,6 +1109,45 @@ describe('PMV ETH Tests', function() {
 
             try {
               await contract.connect(addr3).withdraw();
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('caller is not the owner');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should not let token owner burn by default`,
+          async function() {
+            if (test.name == 'PMV') {
+              return this.skip(); // eslint-disable-line no-invalid-this
+            }
+            const contract = contracts[test.index];
+            await contract.connect(owner).setSale(true);
+
+            await contract.connect(addr7).mint(10, {
+              value: ethers.BigNumber.from('1000000000000000000'),
+            });
+
+            try {
+              await contract.connect(addr7).burn(1);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('Burning not currently allowed');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should not let non-owner change burn permission`,
+          async function() {
+            if (test.name == 'PMV') {
+              return this.skip(); // eslint-disable-line no-invalid-this
+            }
+            const contract = contracts[test.index];
+
+            try {
+              await contract.connect(addr7).setAllowBurning(true);
               expect(false).to.be.true;
             } catch (error) {
               expect(error.message).to.contain('caller is not the owner');
