@@ -448,6 +448,24 @@ contract ERC721Optimized is Context, ERC165, IERC721, IERC721Metadata {
     }
 
     /**
+     * @dev Get all tokens owned by an address in two passes of the owner array.
+     * Call OffChain to not pay high gas costs.
+     */
+    function tokensOfOwnerOffChain(address owner) public view returns (uint[] memory) {
+        uint balance = balanceOf(owner);
+        uint[] memory _tokens = new uint[](balance);
+        uint count;
+        for (uint i; i < _owners.length; i ++){
+            if (owner == _owners[i]){
+                _tokens[count] = i + 1;
+                count++;
+            }
+        }
+        return _tokens;
+    }
+
+
+    /**
      * @dev See {IERC721Enumerable-totalSupply}.
      */
     function totalSupply() public view virtual  returns (uint256) {

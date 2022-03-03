@@ -109,4 +109,14 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
         offset = newOffset;
         offsetRequested = true;
     }
+
+    function tokensOfOwnerOffChain(address owner) public view returns (uint[] memory) {
+        uint balance = balanceOf(owner);
+        uint[] memory _tokens = new uint[](balance);
+
+        for (uint i; i< balance; i++){
+            _tokens[i] = tokenOfOwnerByIndex(owner, i);
+        }
+        return _tokens;
+    }
 }
