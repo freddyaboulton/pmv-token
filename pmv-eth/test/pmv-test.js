@@ -1089,7 +1089,7 @@ describe('PMV ETH Tests', function() {
             expect(await contract.tokenByIndexOffChain(16)).to.equal(20);
 
             const tokensOf7 = await contract.tokensOfOwnerOffChain(
-              addr7.address);
+                addr7.address);
             expect(tokensOf7.length).to.equal(8);
             expect(tokensOf7[0]).to.equal(2);
             expect(tokensOf7[3]).to.equal(6);
