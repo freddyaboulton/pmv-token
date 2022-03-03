@@ -21,13 +21,14 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
 
     constructor(bytes32 merkleroot, string memory uri, bytes32 _rootMintFree, bytes32 _provenanceHash,
                 address vrfCoordinator, address link,
-                bytes32 keyhash, uint256 fee) ERC721("PMV", "PMVTKN") VRFConsumerBase(vrfCoordinator, link) {
+                bytes32 keyhash, uint256 fee, address _multiSigWallet) ERC721("PMV", "PMVTKN") VRFConsumerBase(vrfCoordinator, link) {
         root = merkleroot;
         notRevealedUri = uri;
         rootMintFree = _rootMintFree;
         provenanceHash = _provenanceHash;
         s_keyHash = keyhash;
         s_fee = fee;
+        multiSigWallet = _multiSigWallet;
      }
     
     function mintPresale(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external payable {
@@ -64,6 +65,9 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
     }
 
     function mint(uint256 tokenQuantity) external payable {
+        if (!letContractMint){
+            require(msg.sender == tx.origin, "CONTRACT NOT ALLOWED TO MINT IN PUBLIC SALE");
+        }
         require(saleActive, "SALE NOT ACTIVE");
         require(!presaleActive, "PRESALE ONLY RIGHT NOW");
         require(tokenQuantity <= maxPerTransaction, "MINTING MORE THAN ALLOWED IN A SINGLE TRANSACTION");
@@ -77,6 +81,15 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
             _mint(msg.sender, currentSupply + i);
         }
 
+    }
+
+    function ownerMint(uint256 tokenQuantity) external onlyOwner {
+        uint256 currentSupply = totalSupply();
+        require(tokenQuantity + currentSupply <= maxSupply - ownerMintBuffer, "NOT ENOUGH LEFT IN STOCK");
+        
+        for(uint256 i = 1; i <= tokenQuantity; i++) {
+            _mint(multiSigWallet, currentSupply + i);
+        }
     }
     
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {

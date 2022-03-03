@@ -28,12 +28,16 @@ describe('PMV ETH Tests', function() {
   let addr5;
   let addr6;
   let addr7;
+  let addr8;
   let validTree;
+  let minter;
+  let multiSigWallet;
 
 
   beforeEach(async function() {
     const PMV = await ethers.getContractFactory('PMV');
     const PMVOptimized = await ethers.getContractFactory('PMVOptimized');
+    const Minter = await ethers.getContractFactory('Minter');
 
     const linkToken = '0x01BE23585060835E02B77ef475b0Cc51aA1e0709';
     const vrfCoordinator = '0x6168499c0cFfCaCD319c818142124B7A15E857ab';
@@ -45,7 +49,9 @@ describe('PMV ETH Tests', function() {
       '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc';
 
     [owner, addr1, addr2, addr3,
-      addr5, addr6, addr7] = await ethers.getSigners();
+      addr5, addr6, addr7, addr8] = await ethers.getSigners();
+
+    multiSigWallet = addr8.address;
 
     const merkleEntries = [[owner.address, 2],
       [addr1.address, 2],
@@ -66,12 +72,21 @@ describe('PMV ETH Tests', function() {
     const rootMintFree = freeTree.getHexRoot();
 
     pmv = await PMV.connect(owner).deploy(root, 'https://not-real-uri.com/', rootMintFree,
-        provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee);
+        provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee,
+        multiSigWallet);
     await pmv.deployed();
+    await pmv.connect(owner).setOwnerMintBuffer(0);
+    await pmv.connect(owner).ownerMint(1);
 
     pmvOptimized = await PMVOptimized.connect(owner).deploy(root, 'https://not-real-uri.com/', rootMintFree,
-        provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee);
+        provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee,
+        multiSigWallet);
     await pmvOptimized.deployed();
+    await pmvOptimized.connect(owner).setOwnerMintBuffer(0);
+    await pmvOptimized.connect(owner).ownerMint(1);
+
+    minter = await Minter.connect(owner).deploy();
+    await minter.deployed();
     contracts = [pmv, pmvOptimized];
   });
 
@@ -99,6 +114,21 @@ describe('PMV ETH Tests', function() {
       it(`${test.name}: Should return the offset`, async function() {
         const contract = contracts[test.index];
         expect(await contract.offset()).to.be.equal(0);
+      });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should return the multiSigWallet`, async function() {
+        const contract = contracts[test.index];
+        expect(await contract.multiSigWallet()).to.be.equal(multiSigWallet);
+      });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should mint first token on init`, async function() {
+        const contract = contracts[test.index];
+        expect(await contract.totalSupply()).to.be.equal(1);
+        expect(await contract.ownerOf(1)).to.be.equal(multiSigWallet);
       });
     });
 
@@ -151,6 +181,19 @@ describe('PMV ETH Tests', function() {
             }
             try {
               await contract.connect(addr1).setRootMintFree(newRoot);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('caller is not the owner');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should not let non-owners change the ownerMintBuffer`,
+          async function() {
+            const contract = contracts[test.index];
+            try {
+              await contract.connect(addr1).setOwnerMintBuffer(30);
               expect(false).to.be.true;
             } catch (error) {
               expect(error.message).to.contain('caller is not the owner');
@@ -342,6 +385,80 @@ describe('PMV ETH Tests', function() {
     });
 
     testCases.forEach(function(test) {
+      it(`${test.name}: Should not let non-owners call ownerMint`,
+          async function() {
+            const contract = contracts[test.index];
+            try {
+              await contract.connect(addr1).ownerMint(10);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('caller is not the owner');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should let owner set letContractMint`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setLetContractMint(true);
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should not let non-owners call letContractMint`,
+          async function() {
+            const contract = contracts[test.index];
+            try {
+              await contract.connect(addr1).setLetContractMint(true);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('caller is not the owner');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should let owner call ownerMint`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).ownerMint(3);
+            expect(await contract.balanceOf(multiSigWallet)).to.equal(4);
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should not let contracts mint by default`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setSale(true);
+            await minter.setPMVAddress(contract.address);
+            try {
+              await minter.connect(owner).mint({
+                value: ethers.BigNumber.from('200000000000000000'),
+              });
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain(
+                  'CONTRACT NOT ALLOWED TO MINT IN PUBLIC SALE');
+            }
+          });
+    });
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should let contracts mint if owner allows`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setSale(true);
+            await contract.connect(owner).setLetContractMint(true);
+            await minter.setPMVAddress(contract.address);
+            await minter.connect(owner).mint({
+              value: ethers.BigNumber.from('200000000000000000'),
+            });
+          });
+    });
+
+    testCases.forEach(function(test) {
       it(`${test.name}: Should not let owners set URI to empty string`,
           async function() {
             const contract = contracts[test.index];
@@ -371,10 +488,10 @@ describe('PMV ETH Tests', function() {
           value: ethers.BigNumber.from('77000000000000000'),
         });
         expect(await contract.balanceOf(addr1.address)).to.equal(2);
-        expect(await contract.ownerOf(1)).to.equal(addr1.address);
         expect(await contract.ownerOf(2)).to.equal(addr1.address);
+        expect(await contract.ownerOf(3)).to.equal(addr1.address);
         expect(await contract.balanceOf(addr2.address)).to.equal(1);
-        expect(await contract.ownerOf(3)).to.equal(addr2.address);
+        expect(await contract.ownerOf(4)).to.equal(addr2.address);
         proof = freeTree.getHexProof(hashToken(addr5.address, 2));
         await contract.connect(addr5).mintFree(2, proof, 2);
 
@@ -390,17 +507,17 @@ describe('PMV ETH Tests', function() {
           console.log('Checking tokenOfOwnerByIndexOffChain');
           expect(
               await contract.tokenOfOwnerByIndexOffChain(
-                  addr2.address, 0)).to.equal(3);
+                  addr2.address, 0)).to.equal(4);
           expect(
               await contract.tokenOfOwnerByIndexOffChain(
-                  addr1.address, 1)).to.equal(2);
+                  addr1.address, 1)).to.equal(3);
           expect(
               await contract.tokenOfOwnerByIndexOffChain(
-                  addr6.address, 0)).to.equal(6);
+                  addr6.address, 0)).to.equal(7);
         }
 
         // Check the metadata is not revealed yet
-        for (let i = 1; i < 6; i++) {
+        for (let i = 1; i < 8; i++) {
           expect(await contract.tokenURI(i)).to.equal('https://not-real-uri.com/');
         }
       });
@@ -420,7 +537,7 @@ describe('PMV ETH Tests', function() {
           value: ethers.BigNumber.from('77000000000000000'),
         });
         expect(await contract.balanceOf(addr3.address)).to.equal(3);
-        for (let i = 1; i < 4; i++) {
+        for (let i = 2; i < 5; i++) {
           expect(await contract.ownerOf(i)).to.equal(addr3.address);
         }
       });
@@ -440,7 +557,7 @@ describe('PMV ETH Tests', function() {
             });
             expect(await contract.balanceOf(addr3.address)).to.equal(3);
             await contract.connect(owner).setURIStatus(true, 'https://the-real-doman.org/');
-            for (let i = 1; i < 4; i++) {
+            for (let i = 1; i < 5; i++) {
               expect(await contract.tokenURI(i)).to.equal(`https://the-real-doman.org/${i}`);
             }
           });
@@ -625,7 +742,7 @@ describe('PMV ETH Tests', function() {
         });
         expect(await contract.balanceOf(addr6.address)).to.equal(5);
 
-        for (let i = 1; i < 6; i++) {
+        for (let i = 2; i < 7; i++) {
           expect(await contract.tokenURI(i)).to.equal('https://not-real-uri.com/');
         }
       });
@@ -649,10 +766,10 @@ describe('PMV ETH Tests', function() {
             expect(await contract.balanceOf(addr1.address)).to.equal(10);
             expect(await contract.ownerOf(17)).to.equal(addr1.address);
 
-            await contract.connect(addr2).mint(7, {
-              value: ethers.BigNumber.from('700000000000000000'),
+            await contract.connect(addr2).mint(6, {
+              value: ethers.BigNumber.from('600000000000000000'),
             });
-            expect(await contract.balanceOf(addr2.address)).to.equal(7);
+            expect(await contract.balanceOf(addr2.address)).to.equal(6);
             expect(await contract.ownerOf(24)).to.equal(addr2.address);
 
             try {
@@ -667,6 +784,7 @@ describe('PMV ETH Tests', function() {
             await contract.connect(owner).mint(2, {
               value: ethers.BigNumber.from('200000000000000000'),
             });
+            // because mint token 1 on init
             expect(await contract.balanceOf(owner.address)).to.equal(2);
 
             try {
@@ -683,14 +801,12 @@ describe('PMV ETH Tests', function() {
             });
             expect(await contract.balanceOf(addr3.address)).to.equal(1);
             expect(await contract.ownerOf(30)).to.equal(addr3.address);
-
             maxSupply = await contract.connect(owner).maxSupply();
-            for (let i = 1; i < maxSupply; i++) {
+            for (let i = 1; i <= maxSupply; i++) {
               expect(await contract.tokenURI(i)).to.equal('https://not-real-uri.com/');
             }
-
             await contract.connect(owner).setURIStatus(true, 'https://the-real-doman.org/');
-            for (let i = 1; i < maxSupply; i++) {
+            for (let i = 1; i <= maxSupply; i++) {
               expect(await contract.tokenURI(i)).to.equal(`https://the-real-doman.org/${i}`);
             }
 
@@ -698,6 +814,51 @@ describe('PMV ETH Tests', function() {
           });
     });
 
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should enforce ownerMintBuffer for ownerMint`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setSale(true);
+            await contract.connect(owner).setOwnerMintBuffer(5);
+
+            await contract.connect(addr7).mint(10, {
+              value: ethers.BigNumber.from('1000000000000000000'),
+            });
+
+            await contract.connect(addr1).mint(10, {
+              value: ethers.BigNumber.from('1000000000000000000'),
+            });
+
+            await contract.connect(addr2).mint(4, {
+              value: ethers.BigNumber.from('400000000000000000'),
+            });
+
+            try {
+              await contract.connect(owner).ownerMint(2);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
+            }
+          });
+    });
+
+
+    testCases.forEach(function(test) {
+      it(`${test.name}: Should enforce ownerMintBuffer for ownerMint pt 2`,
+          async function() {
+            const contract = contracts[test.index];
+            await contract.connect(owner).setOwnerMintBuffer(25);
+
+            try {
+              await contract.connect(owner).ownerMint(10);
+              expect(false).to.be.true;
+            } catch (error) {
+              expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
+            }
+            // Use 4 because we call ownerMint once in the pre-test hook
+            await contract.connect(owner).ownerMint(4);
+          });
+    });
 
     testCases.forEach(function(test) {
       it(`${test.name}: Should enfore maxSupply for presaleMint`,
@@ -727,8 +888,8 @@ describe('PMV ETH Tests', function() {
             });
 
             proof = tree.getHexProof(hashToken(addr2.address, 9));
-            await contract.connect(addr2).mintPresale(9, proof, 9, {
-              value: ethers.BigNumber.from('693000000000000000'),
+            await contract.connect(addr2).mintPresale(9, proof, 8, {
+              value: ethers.BigNumber.from('616000000000000000'),
             });
 
             proof = tree.getHexProof(hashToken(addr3.address, 2));
@@ -815,7 +976,7 @@ describe('PMV ETH Tests', function() {
         });
         expect(await contract.balanceOf(addr6.address)).to.equal(5);
 
-        for (let i = 1; i < 6; i++) {
+        for (let i = 1; i < 7; i++) {
           expect(await contract.tokenURI(i)).to.equal('https://not-real-uri.com/');
         }
       });
@@ -844,7 +1005,7 @@ describe('PMV ETH Tests', function() {
 
             const tx = await contract.connect(owner).withdraw();
             const expectedAmount = ethers.BigNumber.from('2700000000000000000');
-            expect(tx).to.changeEtherBalance(owner, expectedAmount);
+            expect(tx).to.changeEtherBalance(addr8, expectedAmount);
           });
     });
 
@@ -878,15 +1039,16 @@ describe('PMV ETH Tests', function() {
             });
             expect(await contract.balanceOf(addr6.address)).to.equal(10);
 
-            await contract.connect(owner).setMaxPerTransaction(20);
-            await contract.connect(addr6).mint(20, {
-              value: ethers.BigNumber.from('2000000000000000000'),
+            await contract.connect(owner).setMaxPerTransaction(15);
+            await contract.connect(addr6).mint(15, {
+              value: ethers.BigNumber.from('1500000000000000000'),
             });
-            expect(await contract.balanceOf(addr6.address)).to.equal(30);
+            expect(await contract.balanceOf(addr6.address)).to.equal(25);
 
+            await contract.connect(owner).setMaxPerTransaction(3);
             try {
-              await contract.connect(addr6).mint(30, {
-                value: ethers.BigNumber.from('300000000000000000'),
+              await contract.connect(addr6).mint(4, {
+                value: ethers.BigNumber.from('40000000000000000'),
               });
               expect(false).to.be.true;
             } catch (error) {

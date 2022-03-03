@@ -34,6 +34,8 @@ async function main() {
 
   const [deployer, addr2, addr3, addr4] = await ethers.getSigners();
 
+  const multiSigWallet = deployer.address;
+
   // Construct merkle tree here
   const merkleEntries = [[deployer.address, 2],
     [addr2.address, 2],
@@ -49,11 +51,14 @@ async function main() {
 
   const pmv = await PMV.connect(deployer).deploy(root,
       'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/', root,
-      provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee);
+      provenanceHash, vrfCoordinator, linkToken, keyHash,
+      linkFee, multiSigWallet);
 
   console.log('PMV deployed to:', pmv.address);
 
   await pmv.connect(deployer).setSale(true);
+  await pmv.connect(deployer).setOwnerMintBuffer(0);
+  await pmv.connect(deployer).ownerMint(1);
 
   await pmv.connect(addr3).mint(5, {
     value: ethers.BigNumber.from('10000000000000000000'),
