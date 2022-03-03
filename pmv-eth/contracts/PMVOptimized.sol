@@ -19,6 +19,7 @@ contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
     mapping (address => uint256) private mints;
     bytes32 private s_keyHash;
     uint256 private s_fee;
+    bool public allowBurning = false;
 
     constructor(bytes32 merkleroot, string memory uri, bytes32 _rootMintFree,
                 bytes32 _provenanceHash, address vrfCoordinator,
@@ -111,7 +112,12 @@ contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
         offsetRequested = true;
     }
 
+    function setAllowBurning(bool _allowBurning) external onlyOwner {
+        allowBurning = _allowBurning;
+    }
+
     function burn(uint256 tokenId) public virtual {
+        require(allowBurning, "Burning not currently allowed");
         require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721Burnable: caller is not owner nor approved");
         _burn(tokenId);
     }
