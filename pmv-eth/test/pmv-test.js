@@ -1108,23 +1108,23 @@ describe('PMV ETH Tests', function() {
             const tokensOf6 = await contract.tokensOfOwnerOffChain(
                 addr6.address);
             expect(tokensOf6.length).to.equal(3);
-            expect(tokensOf6[0]).to.equal(1);
-            expect(tokensOf6[1]).to.equal(2);
-            expect(tokensOf6[2]).to.equal(6);
+            expect(tokensOf6[0]).to.equal(2);
+            expect(tokensOf6[1]).to.equal(3);
+            expect(tokensOf6[2]).to.equal(7);
 
             const tokensOf5 = await contract.tokensOfOwnerOffChain(
                 addr5.address);
             expect(tokensOf5.length).to.equal(5);
-            expect(tokensOf5[0]).to.equal(3);
-            expect(tokensOf5[1]).to.equal(4);
-            expect(tokensOf5[2]).to.equal(5);
-            expect(tokensOf5[3]).to.equal(8);
-            expect(tokensOf5[4]).to.equal(9);
+            expect(tokensOf5[0]).to.equal(4);
+            expect(tokensOf5[1]).to.equal(5);
+            expect(tokensOf5[2]).to.equal(6);
+            expect(tokensOf5[3]).to.equal(9);
+            expect(tokensOf5[4]).to.equal(10);
 
             const tokensOf7 = await contract.tokensOfOwnerOffChain(
                 addr7.address);
             expect(tokensOf7.length).to.equal(1);
-            expect(tokensOf7[0]).to.equal(7);
+            expect(tokensOf7[0]).to.equal(8);
 
             const tokensOfNonOwner = await contract.tokensOfOwnerOffChain(
                 addr1.address);
