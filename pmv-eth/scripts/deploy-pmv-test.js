@@ -47,8 +47,13 @@ async function main() {
   // dummy provenance hash
   const provenanceHash = 
     '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc';
+  
+  // dummy wallet address. Change me!
+  const multiSigWallet = deployer.address;
 
-  // Construct merkle tree here for WHITELIST
+  const ownerMintBuffer = 25;
+
+  // Construct merkle tree here for ALLOWLIST
   const merkleEntries = [['0xE4763c199bdD01aa01c5dc4e9524c63F307e9021', 2],
   ['0x7b1C4134a8682dbee5AF7993DEc9745e11263E8f', 20],
   ['0x537a638751D3602c0fd0843272E958C78aAc2D8B', 3],
@@ -68,13 +73,16 @@ async function main() {
   const pmv = await PMV.connect(deployer).deploy(root,
     'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/',
     root, provenanceHash, vrfCoordinator, linkToken, keyHash,
-    linkFee);
+    linkFee, multiSigWallet);
   const pmvOpt = await PMVOptimized.connect(deployer).deploy(root,
     'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/',
-    root, provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee);
+    root, provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee, multiSigWallet);
 
   console.log('PMV deployed to:', pmv.address);
   console.log('PMVOptimized deployed to:', pmvOpt.address);
+
+  await pmv.connect(deployer).setOwnerMintBuffer(ownerMintBuffer);
+  await pmv.connect(deployer).ownerMint(1);
 
   await pmv.connect(deployer).setPresale(true);
   await pmvOpt.connect(deployer).setPresale(true);
