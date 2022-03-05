@@ -13,9 +13,8 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
     using Strings for uint256;
     using MerkleProof for bytes32[];
 
-    mapping (address => uint256) private presaleMints;
-    mapping (address => uint256) private freeMints;
-    mapping (address => uint256) private mints;
+    mapping (address => uint256) public presaleMints;
+    mapping (address => uint256) public freeMints;
     bytes32 private s_keyHash;
     uint256 private s_fee;
 
@@ -30,7 +29,7 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
         s_fee = fee;
         multiSigWallet = _multiSigWallet;
      }
-    
+
     function mintPresale(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external payable {
         require(presaleActive, "PRESALE NOT ACTIVE");
         require(!saleActive, "SALE ACTIVE RIGHT NOW");
@@ -43,9 +42,9 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
 
         for(uint256 i = 1; i <= tokenQuantity; i++) {
             _mint(msg.sender, currentSupply + i);
-        }  
-        
-        presaleMints[msg.sender] += tokenQuantity;      
+        }
+
+        presaleMints[msg.sender] += tokenQuantity;
     }
 
     function mintFree(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external {
@@ -54,14 +53,14 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
         require(freeMints[msg.sender] + tokenQuantity <= allowance, "MINTING MORE THAN ALLOWED");
 
         uint256 currentSupply = totalSupply();
-        
+
         require(tokenQuantity + currentSupply <= maxSupply, "NOT ENOUGH LEFT IN STOCK");
 
         for(uint256 i = 1; i <= tokenQuantity; i++) {
             _mint(msg.sender, currentSupply + i);
-        }  
-        
-        freeMints[msg.sender] += tokenQuantity;      
+        }
+
+        freeMints[msg.sender] += tokenQuantity;
     }
 
     function mint(uint256 tokenQuantity) external payable {
@@ -86,12 +85,12 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
     function ownerMint(uint256 tokenQuantity) external onlyOwner {
         uint256 currentSupply = totalSupply();
         require(tokenQuantity + currentSupply <= maxSupply - ownerMintBuffer, "NOT ENOUGH LEFT IN STOCK");
-        
+
         for(uint256 i = 1; i <= tokenQuantity; i++) {
             _mint(multiSigWallet, currentSupply + i);
         }
     }
-    
+
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         require(_exists(tokenId), "URI query for nonexistent token");
         return _tokenURI(tokenId);
