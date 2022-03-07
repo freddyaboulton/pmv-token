@@ -5,21 +5,6 @@
 // Runtime Environment's members available in the global scope.
 const hre = require('hardhat');
 const {ethers} = require('hardhat');
-const {MerkleTree} = require('merkletreejs');
-const keccak256 = require('keccak256');
-
-
-/**
- * Hash tokens for merkle tree construction.
- * @param {string} account - Address.
- * @param {int} quantity - Max allowed to mint.
- * @return {buffer} keccak256 hash.
- */
-function hashToken(account, quantity) {
-  const hash = ethers.utils.solidityKeccak256(['address', 'uint256'],
-      [account, quantity]).slice(2);
-  return Buffer.from(hash, 'hex');
-}
 
 // run with npx hardhat run scripts/deploy-pmv-test.js --network rinkeby
 
@@ -32,66 +17,33 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const PMV = await ethers.getContractFactory('PMV');
   const PMVOptimized = await ethers.getContractFactory('PMVOptimized');
 
   const [deployer] = await ethers.getSigners();
 
   // taken from: https://docs.chain.link/docs/vrf-contracts/v1/
-  const linkToken = '0x01BE23585060835E02B77ef475b0Cc51aA1e0709';
-  const vrfCoordinator = '0xb3dCcb4Cf7a26f6cf6B120Cf5A73875B7BBc655B';
-  const keyHash = 
-    '0x2ed0feb3e7fd2022120aa84fab1945545a9f2ffc9076fd6156fa96eaff4c1311';
-  const linkFee = ethers.BigNumber.from('100000000000000000');
-  
-  // dummy provenance hash
-  const provenanceHash = 
-    '0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc';
-  
-  // dummy wallet address. Change me!
-  const multiSigWallet = deployer.address;
+  const linkToken = '0x514910771AF9Ca656af840dff83E8264EcF986CA';
+  const vrfCoordinator = '0xf0d54349aDdcf704F77AE15b96510dEA15cb7952';
+  const keyHash =
+    '0xAA77729D3466CA35AE8D28B3BBAC7CC36A5031EFDC430821C02BC31A238AF445';
+  const linkFee = ethers.BigNumber.from('2000000000000000000');
 
-  const ownerMintBuffer = 25;
+  // provenance hash
+  const provenanceHash =
+    '0xed6587c34eb5cadfb2ef3af47d60919169dd837613c0e46a78601962849d125b';
 
-  // Construct merkle tree here for ALLOWLIST
-  const merkleEntries = [['0xE4763c199bdD01aa01c5dc4e9524c63F307e9021', 2],
-  ['0x7b1C4134a8682dbee5AF7993DEc9745e11263E8f', 20],
-  ['0x537a638751D3602c0fd0843272E958C78aAc2D8B', 3],
-  ['0x9De6405C0C7512ee94BCB79B860668a52aa7FAd2', 1],
-  [deployer.address, 1]];
-  const hashes = merkleEntries.map((token) => hashToken(...token));
-  validTree = new MerkleTree(hashes, keccak256, {sortPairs: true});
-  const root = validTree.getHexRoot();
-
-  // Create separate tree for free mint here if needed
-  // Right now using same list for presale and free mint
+  const multiSigWallet = '0xB01A3021f067c16FA1ac56F790cFdE75CD8e63e3';
+  const ownerMintBuffer = 150;
+  const root = '0xe4130558f9ea3fcb929737d7d0feb37fd9db2816990a779b7396c56d144bb57a';
+  const freeRoot = '0xa74a6335936fbe099b04a7d8b1cb23edc13aabd5a92b8ea1670da711e2acf3bd';
 
   console.log("Deploying contracts with the account:", deployer.address);
 
-  // root is for whitelist
-  // need to add freeRoot if different
-  const pmv = await PMV.connect(deployer).deploy(root,
-    'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/',
-    root, provenanceHash, vrfCoordinator, linkToken, keyHash,
-    linkFee, multiSigWallet);
   const pmvOpt = await PMVOptimized.connect(deployer).deploy(root,
-    'https://my-json-server.typicode.com/freddyaboulton/pmv-token/tokens/',
-    root, provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee, multiSigWallet);
+    'ipfs://QmbrgJrjus95i1UFebz27bFmz9gwfc6QHSH8QiBJ6q22s7',
+    freeRoot, provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee, multiSigWallet);
 
-  console.log('PMV deployed to:', pmv.address);
   console.log('PMVOptimized deployed to:', pmvOpt.address);
-
-  await pmv.connect(deployer).setOwnerMintBuffer(ownerMintBuffer);
-  await pmv.connect(deployer).ownerMint(1);
-
-  await pmv.connect(deployer).setPresale(true);
-  await pmvOpt.connect(deployer).setPresale(true);
-
-  const preSaleStatus = await pmv.connect(deployer).presaleActive();
-  console.log('Presale status ', preSaleStatus)
-
-  const preSaleStatusOpt = await pmvOpt.connect(deployer).presaleActive();
-  console.log('Presale status ', preSaleStatusOpt)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
