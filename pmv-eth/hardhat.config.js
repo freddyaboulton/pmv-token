@@ -1,6 +1,7 @@
 require('@nomiclabs/hardhat-waffle');
 require('hardhat-gas-reporter');
 require('@nomiclabs/hardhat-truffle5');
+require("@nomiclabs/hardhat-etherscan");
 require('dotenv').config();
 
 
@@ -35,9 +36,18 @@ module.exports = {
     coinmarketcap: process.env.COINMARKETCAP_KEY,
   },
   networks: {
-      rinkeby: {
-        url: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-        accounts: [`0x${process.env.DEPLOYER_PRIVATE_KEY}`]
-      }
+    rinkeby: {
+      url: process.env.RINKEBY_URI,
+      accounts: [`0x${process.env.DEPLOYER_PRIVATE_KEY}`]
     },
+
+    mainnet: {
+      url: process.env.MAINNET_URI,
+      accounts: [`0x${process.env.DEPLOYER_PRIVATE_KEY}`]
+    }
+  },
+
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY
+  }
 };

@@ -11,13 +11,12 @@ contract PMVMixin is Ownable {
     using Strings for uint256;
     using Address for address payable;
 
-    uint256 public constant maxSupply = 30;
+    uint256 public constant maxSupply = 10000;
     uint256 public maxPerTransaction = 10;
     uint public salePrice = 0.1 ether;
     uint public presalePrice = 0.077 ether;
     bool public presaleActive = false;
-    bool public freeMintAllowed = false; 
-    bool public saleActive = false;    
+    bool public saleActive = false;
     string private tokenBaseURI;
     string internal notRevealedUri;
     bool private revealed = false;
@@ -38,8 +37,8 @@ contract PMVMixin is Ownable {
 
         else {
             return string(abi.encodePacked(tokenBaseURI, tokenId.toString()));
-        }        
-    } 
+        }
+    }
 
     function setPresale(bool _presaleStatus) external onlyOwner {
         presaleActive = _presaleStatus;
@@ -47,10 +46,6 @@ contract PMVMixin is Ownable {
 
     function setSale(bool _saleStatus) external onlyOwner {
         saleActive = _saleStatus;
-    }
-
-    function setFreeMintAllowed(bool _freeMintAllowed) external onlyOwner {
-        freeMintAllowed = _freeMintAllowed;
     }
 
     function setURIStatus(bool _revealed, string calldata _tokenBaseURI) external onlyOwner {

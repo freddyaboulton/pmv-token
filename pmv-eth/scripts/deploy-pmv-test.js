@@ -17,7 +17,7 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const PMVOptimized = await ethers.getContractFactory('PMVOptimized');
+  const PMVOptimized = await ethers.getContractFactory('PiratesOfTheMetaverse');
 
   const [deployer] = await ethers.getSigners();
 
@@ -41,7 +41,8 @@ async function main() {
 
   const pmvOpt = await PMVOptimized.connect(deployer).deploy(root,
     'ipfs://QmbrgJrjus95i1UFebz27bFmz9gwfc6QHSH8QiBJ6q22s7',
-    freeRoot, provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee, multiSigWallet);
+    freeRoot, provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee, multiSigWallet,
+    { gasLimit: 4500000, gasPrice: 30000000000 });
 
   console.log('PMVOptimized deployed to:', pmvOpt.address);
 }
