@@ -36,7 +36,7 @@ describe('PMV ETH Tests', function() {
 
   beforeEach(async function() {
     const PMV = await ethers.getContractFactory('PMV');
-    const PMVOptimized = await ethers.getContractFactory('PMVOptimized');
+    const PMVOptimized = await ethers.getContractFactory('PiratesOfTheMetaverse');
     const Minter = await ethers.getContractFactory('Minter');
 
     const linkToken = '0x01BE23585060835E02B77ef475b0Cc51aA1e0709';
@@ -337,7 +337,7 @@ describe('PMV ETH Tests', function() {
 
 
     testCases.forEach(function(test) {
-      it(`${test.name}: Should not let non-owners 
+      it(`${test.name}: Should not let non-owners
         change the freeMintAllowed satus`,
       async function() {
         const contract = contracts[test.index];
@@ -695,7 +695,7 @@ describe('PMV ETH Tests', function() {
 
 
     testCases.forEach(function(test) {
-      it(`${test.name}: Should not let users mint if 
+      it(`${test.name}: Should not let users mint if
           they do not send enough eth`,
       async function() {
         const contract = contracts[test.index];
@@ -712,7 +712,7 @@ describe('PMV ETH Tests', function() {
     });
 
     testCases.forEach(function(test) {
-      it(`${test.name}: Should not let users mint allowlist if 
+      it(`${test.name}: Should not let users mint allowlist if
           they do not send enough eth`,
       async function() {
         const contract = contracts[test.index];
@@ -943,7 +943,7 @@ describe('PMV ETH Tests', function() {
     });
 
     testCases.forEach(function(test) {
-      it(`${test.name}: Should not let maxPerTransaction 
+      it(`${test.name}: Should not let maxPerTransaction
       interfere with presale amount minted`,
       async function() {
         const contract = contracts[test.index];
@@ -965,7 +965,7 @@ describe('PMV ETH Tests', function() {
     });
 
     testCases.forEach(function(test) {
-      it(`${test.name}: Should let users mint after 
+      it(`${test.name}: Should let users mint after
       presale and not reveal metadata`,
       async function() {
         const contract = contracts[test.index];

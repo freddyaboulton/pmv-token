@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 
 
-contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
+contract PiratesOfTheMetaverse is PMVMixin, ERC721Optimized, VRFConsumerBase {
     using Strings for uint256;
     using MerkleProof for bytes32[];
 
@@ -22,7 +22,7 @@ contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
 
     constructor(bytes32 merkleroot, string memory uri, bytes32 _rootMintFree,
                 bytes32 _provenanceHash, address vrfCoordinator,
-                address link, bytes32 keyhash, uint256 fee, address _multiSigWallet) ERC721Optimized("PMV", "PMVTKN") VRFConsumerBase(vrfCoordinator, link){
+                address link, bytes32 keyhash, uint256 fee, address _multiSigWallet) ERC721Optimized("Pirates of the Metaverse", "POMV") VRFConsumerBase(vrfCoordinator, link){
         root = merkleroot;
         notRevealedUri = uri;
         rootMintFree = _rootMintFree;
@@ -105,8 +105,9 @@ contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
     }
 
     function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
-        // transform the result to a number between 1 and maxSupply inclusively
-        uint256 newOffset = (randomness % maxSupply) + 1;
+        // transform the result to a number between 0 and 9,997 inclusively
+        // token 1 and 2 are fixed and are not included for purposes of offsetting
+        uint256 newOffset = (randomness % (maxSupply - 2));
         offset = newOffset;
         offsetRequested = true;
     }
