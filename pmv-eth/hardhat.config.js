@@ -53,12 +53,12 @@ module.exports = {
   networks: {
     rinkeby: {
       url: RINKEBY_URI,
-      accounts: [`0x${process.env.DEPLOYER_PRIVATE_KEY}`]
+      accounts: [`0x${DEPLOYER_PRIVATE_KEY}`]
     },
 
     mainnet: {
       url: MAINNET_URI,
-      accounts: [`0x${process.env.DEPLOYER_PRIVATE_KEY}`]
+      accounts: [`0x${DEPLOYER_PRIVATE_KEY}`]
     }
   },
 
