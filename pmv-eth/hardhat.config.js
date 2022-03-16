@@ -14,6 +14,11 @@ if (MAINNET_URI === ""){
   console.log("MAINNET_URI not set. Cannot deploy");
 }
 
+// dummy key in test hardhat network
+const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY ? process.env.DEPLOYER_PRIVATE_KEY : "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+if (DEPLOYER_PRIVATE_KEY === "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"){
+  console.log("specify private key in DEPLOYER_PRIVATE_KEY env variable!");
+}
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
