@@ -5,6 +5,16 @@ require("@nomiclabs/hardhat-etherscan");
 require('dotenv').config();
 
 
+const RINKEBY_URI = process.env.RINKEBY_URI ? process.env.RINKEBY_URI : "";
+const MAINNET_URI = process.env.MAINNET_URI ? process.env.MAINNET_URI : "";
+if (RINKEBY_URI === ""){
+  console.log("RINKEBY_URI not set. Cannot deploy");
+}
+if (MAINNET_URI === ""){
+  console.log("MAINNET_URI not set. Cannot deploy");
+}
+
+
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
 task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
@@ -37,12 +47,12 @@ module.exports = {
   },
   networks: {
     rinkeby: {
-      url: process.env.RINKEBY_URI,
+      url: RINKEBY_URI,
       accounts: [`0x${process.env.DEPLOYER_PRIVATE_KEY}`]
     },
 
     mainnet: {
-      url: process.env.MAINNET_URI,
+      url: MAINNET_URI,
       accounts: [`0x${process.env.DEPLOYER_PRIVATE_KEY}`]
     }
   },

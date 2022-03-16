@@ -36,7 +36,8 @@ describe('PMV ETH Tests', function() {
 
   beforeEach(async function() {
     const PMV = await ethers.getContractFactory('PMV');
-    const PMVOptimized = await ethers.getContractFactory('PiratesOfTheMetaverse');
+    const PMVOptimized = await ethers.getContractFactory(
+        'PiratesOfTheMetaverse');
     const Minter = await ethers.getContractFactory('Minter');
 
     const linkToken = '0x01BE23585060835E02B77ef475b0Cc51aA1e0709';
@@ -75,14 +76,14 @@ describe('PMV ETH Tests', function() {
         provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee,
         multiSigWallet);
     await pmv.deployed();
-    await pmv.connect(owner).setOwnerMintBuffer(0);
+    await pmv.connect(owner).setOwnerMintBuffer(30);
     await pmv.connect(owner).ownerMint(1);
 
     pmvOptimized = await PMVOptimized.connect(owner).deploy(root, 'https://not-real-uri.com/', rootMintFree,
         provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee,
         multiSigWallet);
     await pmvOptimized.deployed();
-    await pmvOptimized.connect(owner).setOwnerMintBuffer(0);
+    await pmvOptimized.connect(owner).setOwnerMintBuffer(30);
     await pmvOptimized.connect(owner).ownerMint(1);
 
     minter = await Minter.connect(owner).deploy();
@@ -97,7 +98,7 @@ describe('PMV ETH Tests', function() {
     testCases.forEach(function(test) {
       it(`${test.name}: Should return the total supply`, async function() {
         const contract = contracts[test.index];
-        expect(await contract.maxSupply()).to.equal(30);
+        expect(await contract.maxSupply()).to.equal(10000);
       });
     });
 
@@ -295,31 +296,35 @@ describe('PMV ETH Tests', function() {
           });
     });
 
-    testCases.forEach(function(test) {
-      it(`${test.name}: Should not let users mint when sale and presale active`,
-          async function() {
-            const contract = contracts[test.index];
-            contract.connect(owner).setPresale(true);
-            contract.connect(owner).setSale(true);
-            try {
-              await contract.connect(addr1).mint(2, {
-                value: ethers.BigNumber.from('200000000000000000'),
-              });
-              expect(false).to.be.true;
-            } catch (error) {
-              expect(error.message).to.contain('PRESALE ONLY RIGHT NOW');
-            }
-            try {
-              const proof = validTree.getHexProof(hashToken(addr1.address, 1));
-              await contract.connect(addr1).mintPresale(2, proof, 1, {
-                value: ethers.BigNumber.from('200000000000000000'),
-              });
-              expect(false).to.be.true;
-            } catch (error) {
-              expect(error.message).to.contain('SALE ACTIVE RIGHT NOW');
-            }
-          });
-    });
+
+    // disabled this functionality
+    // testCases.forEach(function(test) {
+    //   it(`${test.name}: Should not let users mint when sale
+    // and presale active`,
+    //       async function() {
+    //         const contract = contracts[test.index];
+    //         contract.connect(owner).setPresale(true);
+    //         contract.connect(owner).setSale(true);
+    //         try {
+    //           await contract.connect(addr1).mint(2, {
+    //             value: ethers.BigNumber.from('200000000000000000'),
+    //           });
+    //           expect(false).to.be.true;
+    //         } catch (error) {
+    //           expect(error.message).to.contain('PRESALE ONLY RIGHT NOW');
+    //         }
+    //         try {
+    //           const proof = validTree.getHexProof(hashToken(
+    // addr1.address, 1));
+    //           await contract.connect(addr1).mintPresale(2, proof, 1, {
+    //             value: ethers.BigNumber.from('200000000000000000'),
+    //           });
+    //           expect(false).to.be.true;
+    //         } catch (error) {
+    //           expect(error.message).to.contain('SALE ACTIVE RIGHT NOW');
+    //         }
+    //       });
+    // });
 
 
     testCases.forEach(function(test) {
@@ -342,7 +347,7 @@ describe('PMV ETH Tests', function() {
       async function() {
         const contract = contracts[test.index];
         try {
-          await contract.connect(addr1).setFreeMintAllowed(false);
+          await contract.connect(addr1).setPresale(false);
           expect(false).to.be.true;
         } catch (error) {
           expect(error.message).to.contain('caller is not the owner');
@@ -477,7 +482,6 @@ describe('PMV ETH Tests', function() {
       async function() {
         const contract = contracts[test.index];
         await contract.connect(owner).setPresale(true);
-        await contract.connect(owner).setFreeMintAllowed(true);
         let proof = validTree.getHexProof(hashToken(addr1.address, 2));
         await contract.connect(addr1).mintPresale(2, proof, 2, {
           value: ethers.BigNumber.from('154000000000000000'),
@@ -584,7 +588,7 @@ describe('PMV ETH Tests', function() {
       it(`${test.name}: Should not let accounts not on free allowlist mint`,
           async function() {
             const contract = contracts[test.index];
-            await contract.connect(owner).setFreeMintAllowed(true);
+            await contract.connect(owner).setPresale(true);
             try {
               const proof = freeTree.getHexProof(hashToken(addr1.address, 1));
               await contract.connect(addr1).mintFree(1, proof, 1);
@@ -643,7 +647,6 @@ describe('PMV ETH Tests', function() {
       mint free more than allowed`,
       async function() {
         const contract = contracts[test.index];
-        await contract.connect(owner).setFreeMintAllowed(true);
         await contract.connect(owner).setPresale(true);
         // Mint more than allowed in a single transaction
         try {
@@ -679,7 +682,7 @@ describe('PMV ETH Tests', function() {
       it(`${test.name}: Should not let send eth for free mint`,
           async function() {
             const contract = contracts[test.index];
-            await contract.connect(owner).setFreeMintAllowed(true);
+            await contract.connect(owner).setPresale(true);
             try {
               const proof = freeTree.getHexProof(hashToken(addr5.address, 2));
               await contract.connect(addr5).mintFree(2, proof, 2, {
@@ -772,14 +775,16 @@ describe('PMV ETH Tests', function() {
             expect(await contract.balanceOf(addr2.address)).to.equal(6);
             expect(await contract.ownerOf(24)).to.equal(addr2.address);
 
-            try {
-              await contract.connect(addr6).mint(5, {
-                value: ethers.BigNumber.from('500000000000000000'),
-              });
-              expect(false).to.be.true;
-            } catch (error) {
-              expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
-            }
+            // commenting out because we increased max supply
+
+            // try {
+            //   await contract.connect(addr6).mint(5, {
+            //     value: ethers.BigNumber.from('500000000000000000'),
+            //   });
+            //   expect(false).to.be.true;
+            // } catch (error) {
+            //   expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
+            // }
 
             await contract.connect(owner).mint(2, {
               value: ethers.BigNumber.from('200000000000000000'),
@@ -787,21 +792,21 @@ describe('PMV ETH Tests', function() {
             // because mint token 1 on init
             expect(await contract.balanceOf(owner.address)).to.equal(2);
 
-            try {
-              await contract.connect(addr5).mint(2, {
-                value: ethers.BigNumber.from('200000000000000000'),
-              });
-              expect(false).to.be.true;
-            } catch (error) {
-              expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
-            }
+            // try {
+            //   await contract.connect(addr5).mint(2, {
+            //     value: ethers.BigNumber.from('200000000000000000'),
+            //   });
+            //   expect(false).to.be.true;
+            // } catch (error) {
+            //   expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
+            // }
 
             await contract.connect(addr3).mint(1, {
               value: ethers.BigNumber.from('100000000000000000'),
             });
             expect(await contract.balanceOf(addr3.address)).to.equal(1);
             expect(await contract.ownerOf(30)).to.equal(addr3.address);
-            maxSupply = await contract.connect(owner).maxSupply();
+            const maxSupply = 30;
             for (let i = 1; i <= maxSupply; i++) {
               expect(await contract.tokenURI(i)).to.equal('https://not-real-uri.com/');
             }
@@ -847,7 +852,7 @@ describe('PMV ETH Tests', function() {
       it(`${test.name}: Should enforce ownerMintBuffer for ownerMint pt 2`,
           async function() {
             const contract = contracts[test.index];
-            await contract.connect(owner).setOwnerMintBuffer(25);
+            await contract.connect(owner).setOwnerMintBuffer(5);
 
             try {
               await contract.connect(owner).ownerMint(10);
@@ -860,58 +865,58 @@ describe('PMV ETH Tests', function() {
           });
     });
 
-    testCases.forEach(function(test) {
-      it(`${test.name}: Should enfore maxSupply for presaleMint`,
-          async function() {
-            const contract = contracts[test.index];
-            const newEntries = [[owner.address, 10],
-              [addr1.address, 10],
-              [addr2.address, 9],
-              [addr3.address, 2],
-            ];
-            const newHashes = newEntries.map((token) => hashToken(...token));
-            tree = new MerkleTree(newHashes, keccak256, {sortPairs: true});
-            const newRoot = tree.getHexRoot();
-            await contract.connect(owner).setRoot(newRoot);
-            await contract.connect(owner).setPresale(true);
-            await contract.connect(owner).setFreeMintAllowed(true);
+    // commenting out because we increased max supply prior to deployment
+    // testCases.forEach(function(test) {
+    //   it(`${test.name}: Should enfore maxSupply for presaleMint`,
+    //       async function() {
+    //         const contract = contracts[test.index];
+    //         const newEntries = [[owner.address, 10],
+    //           [addr1.address, 10],
+    //           [addr2.address, 9],
+    //           [addr3.address, 2],
+    //         ];
+    //         const newHashes = newEntries.map((token) => hashToken(...token));
+    //         tree = new MerkleTree(newHashes, keccak256, {sortPairs: true});
+    //         const newRoot = tree.getHexRoot();
+    //         await contract.connect(owner).setRoot(newRoot);
+    //         await contract.connect(owner).setPresale(true);
 
-            let proof = tree.getHexProof(hashToken(addr1.address, 10));
+    //         let proof = tree.getHexProof(hashToken(addr1.address, 10));
 
-            await contract.connect(addr1).mintPresale(10, proof, 10, {
-              value: ethers.BigNumber.from('770000000000000000'),
-            });
+    //         await contract.connect(addr1).mintPresale(10, proof, 10, {
+    //           value: ethers.BigNumber.from('770000000000000000'),
+    //         });
 
-            proof = tree.getHexProof(hashToken(owner.address, 10));
-            await contract.connect(owner).mintPresale(10, proof, 10, {
-              value: ethers.BigNumber.from('770000000000000000'),
-            });
+    //         proof = tree.getHexProof(hashToken(owner.address, 10));
+    //         await contract.connect(owner).mintPresale(10, proof, 10, {
+    //           value: ethers.BigNumber.from('770000000000000000'),
+    //         });
 
-            proof = tree.getHexProof(hashToken(addr2.address, 9));
-            await contract.connect(addr2).mintPresale(9, proof, 8, {
-              value: ethers.BigNumber.from('616000000000000000'),
-            });
+    //         proof = tree.getHexProof(hashToken(addr2.address, 9));
+    //         await contract.connect(addr2).mintPresale(9, proof, 8, {
+    //           value: ethers.BigNumber.from('616000000000000000'),
+    //         });
 
-            proof = tree.getHexProof(hashToken(addr3.address, 2));
+    //         proof = tree.getHexProof(hashToken(addr3.address, 2));
 
-            try {
-              await contract.connect(addr3).mintPresale(2, proof, 2, {
-                value: ethers.BigNumber.from('154000000000000000'),
-              });
-              expect(false).to.be.true;
-            } catch (error) {
-              expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
-            }
+    //         try {
+    //           await contract.connect(addr3).mintPresale(2, proof, 2, {
+    //             value: ethers.BigNumber.from('154000000000000000'),
+    //           });
+    //           expect(false).to.be.true;
+    //         } catch (error) {
+    //           expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
+    //         }
 
-            try {
-              proof = freeTree.getHexProof(hashToken(addr5.address, 2));
-              await contract.connect(addr5).mintFree(2, proof, 2);
-              expect(false).to.be.true;
-            } catch (error) {
-              expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
-            }
-          });
-    });
+    //         try {
+    //           proof = freeTree.getHexProof(hashToken(addr5.address, 2));
+    //           await contract.connect(addr5).mintFree(2, proof, 2);
+    //           expect(false).to.be.true;
+    //         } catch (error) {
+    //           expect(error.message).to.contain('NOT ENOUGH LEFT IN STOCK');
+    //         }
+    //       });
+    // });
 
 
     testCases.forEach(function(test) {

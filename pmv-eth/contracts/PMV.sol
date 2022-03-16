@@ -32,7 +32,6 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
 
     function mintPresale(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external payable {
         require(presaleActive, "PRESALE NOT ACTIVE");
-        require(!saleActive, "SALE ACTIVE RIGHT NOW");
         require(proof.verify(root, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON ALLOWLIST");
         require(presaleMints[msg.sender] + tokenQuantity <= allowance, "MINTING MORE THAN ALLOWED");
         require(tokenQuantity * presalePrice <= msg.value, "INCORRECT PAYMENT AMOUNT");
@@ -48,7 +47,7 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
     }
 
     function mintFree(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external {
-        require(freeMintAllowed, "Free mint not allowed");
+        require(presaleActive, "Free mint not allowed");
         require(proof.verify(rootMintFree, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON FREE MINT ALLOWLIST");
         require(freeMints[msg.sender] + tokenQuantity <= allowance, "MINTING MORE THAN ALLOWED");
 
@@ -68,7 +67,6 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
             require(msg.sender == tx.origin, "CONTRACT NOT ALLOWED TO MINT IN PUBLIC SALE");
         }
         require(saleActive, "SALE NOT ACTIVE");
-        require(!presaleActive, "PRESALE ONLY RIGHT NOW");
         require(tokenQuantity <= maxPerTransaction, "MINTING MORE THAN ALLOWED IN A SINGLE TRANSACTION");
         require(tokenQuantity * salePrice <= msg.value, "INCORRECT PAYMENT AMOUNT");
 
@@ -84,7 +82,7 @@ contract PMV is ERC721Enumerable, PMVMixin, VRFConsumerBase {
 
     function ownerMint(uint256 tokenQuantity) external onlyOwner {
         uint256 currentSupply = totalSupply();
-        require(tokenQuantity + currentSupply <= maxSupply - ownerMintBuffer, "NOT ENOUGH LEFT IN STOCK");
+        require(tokenQuantity + currentSupply <= ownerMintBuffer, "NOT ENOUGH LEFT IN STOCK");
 
         for(uint256 i = 1; i <= tokenQuantity; i++) {
             _mint(multiSigWallet, currentSupply + i);

@@ -37,12 +37,12 @@ async function main() {
   const root = '0xe4130558f9ea3fcb929737d7d0feb37fd9db2816990a779b7396c56d144bb57a';
   const freeRoot = '0xa74a6335936fbe099b04a7d8b1cb23edc13aabd5a92b8ea1670da711e2acf3bd';
 
-  console.log("Deploying contracts with the account:", deployer.address);
+  console.log('Deploying contracts with the account:', deployer.address);
 
   const pmvOpt = await PMVOptimized.connect(deployer).deploy(root,
-    'ipfs://QmbrgJrjus95i1UFebz27bFmz9gwfc6QHSH8QiBJ6q22s7',
-    freeRoot, provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee, multiSigWallet,
-    { gasLimit: 4500000, gasPrice: 30000000000 });
+      'ipfs://QmbrgJrjus95i1UFebz27bFmz9gwfc6QHSH8QiBJ6q22s7',
+      freeRoot, provenanceHash, vrfCoordinator, linkToken, keyHash, linkFee, multiSigWallet,
+      {gasLimit: 4500000, gasPrice: 30000000000});
 
   console.log('PMVOptimized deployed to:', pmvOpt.address);
 }

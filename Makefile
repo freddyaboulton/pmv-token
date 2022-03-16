@@ -32,7 +32,7 @@ kill-servers:
 	kill -9 $$(ps aux | grep '\snode\s' | awk '{print $$2}')
 
 build-eth:
-	cd pmv-eth && npx hardhat compile && cp artifacts/contracts/PMV.sol/PMV.json ../pmv-sol/app/idl
+	cd pmv-eth && npx hardhat compile && cp artifacts/contracts/PMV.sol/PMV.json ../pmv-sol/app/idl && cp artifacts/contracts/PiratesOfTheMetaverse.sol/PiratesOfTheMetaverse.json ../pmv-sol/app/idl
 
 test-eth: build-eth
 	cd pmv-eth && npx hardhat test
