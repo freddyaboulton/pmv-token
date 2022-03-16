@@ -19,7 +19,7 @@ function hashToken(account, quantity) {
  * Deploy the contract on the local hardhat network
  */
 async function main() {
-  const PMV = await ethers.getContractFactory('PMV');
+  const PMV = await ethers.getContractFactory('PiratesOfTheMetaverse');
 
   // taken from: https://docs.chain.link/docs/vrf-contracts/v1/
   const linkToken = '0x01BE23585060835E02B77ef475b0Cc51aA1e0709';
@@ -57,7 +57,7 @@ async function main() {
   console.log('PMV deployed to:', pmv.address);
 
   await pmv.connect(deployer).setSale(true);
-  await pmv.connect(deployer).setOwnerMintBuffer(0);
+  await pmv.connect(deployer).setOwnerMintBuffer(30);
   await pmv.connect(deployer).ownerMint(1);
 
   await pmv.connect(addr3).mint(5, {

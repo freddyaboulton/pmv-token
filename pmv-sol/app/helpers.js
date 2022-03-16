@@ -17,7 +17,7 @@ import {
 } from './constants.js';
 import {ethers} from 'ethers';
 
-const parsed = JSON.parse(fs.readFileSync('./idl/PMV.json'));
+const parsed = JSON.parse(fs.readFileSync('./idl/PiratesOfTheMetaverse.json'));
 
 const ethProvider = new ethers.providers.JsonRpcProvider(
     process.env.ETH_PROVIDER);

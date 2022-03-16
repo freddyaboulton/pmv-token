@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 
 
-contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
+contract PiratesOfTheMetaverse is PMVMixin, ERC721Optimized, VRFConsumerBase {
     using Strings for uint256;
     using MerkleProof for bytes32[];
 
@@ -22,7 +22,7 @@ contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
 
     constructor(bytes32 merkleroot, string memory uri, bytes32 _rootMintFree,
                 bytes32 _provenanceHash, address vrfCoordinator,
-                address link, bytes32 keyhash, uint256 fee, address _multiSigWallet) ERC721Optimized("PMV", "PMVTKN") VRFConsumerBase(vrfCoordinator, link){
+                address link, bytes32 keyhash, uint256 fee, address _multiSigWallet) ERC721Optimized("Pirates of the Metaverse", "POMV") VRFConsumerBase(vrfCoordinator, link){
         root = merkleroot;
         notRevealedUri = uri;
         rootMintFree = _rootMintFree;
@@ -34,7 +34,6 @@ contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
 
     function mintPresale(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external payable {
         require(presaleActive, "PRESALE NOT ACTIVE");
-        require(!saleActive, "SALE ACTIVE RIGHT NOW");
         require(proof.verify(root, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON ALLOWLIST");
         require(presaleMints[msg.sender] + tokenQuantity <= allowance, "MINTING MORE THAN ALLOWED");
 
@@ -51,7 +50,7 @@ contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
     }
 
     function mintFree(uint256 allowance, bytes32[] calldata proof, uint256 tokenQuantity) external {
-        require(freeMintAllowed, "Free mint not allowed");
+        require(presaleActive, "Free mint not allowed");
         require(proof.verify(rootMintFree, keccak256(abi.encodePacked(msg.sender, allowance))), "NOT ON FREE MINT ALLOWLIST");
         require(freeMints[msg.sender] + tokenQuantity <= allowance, "MINTING MORE THAN ALLOWED");
 
@@ -71,7 +70,6 @@ contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
             require(msg.sender == tx.origin, "CONTRACT NOT ALLOWED TO MINT IN PUBLIC SALE");
         }
         require(saleActive, "SALE NOT ACTIVE");
-        require(!presaleActive, "PRESALE ONLY RIGHT NOW");
         require(tokenQuantity <= maxPerTransaction, "MINTING MORE THAN ALLOWED IN A SINGLE TRANSACTION");
 
         uint256 currentSupply = totalNonBurnedSupply();
@@ -86,7 +84,7 @@ contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
 
     function ownerMint(uint256 tokenQuantity) external onlyOwner {
         uint256 currentSupply = totalNonBurnedSupply();
-        require(tokenQuantity + currentSupply <= maxSupply - ownerMintBuffer, "NOT ENOUGH LEFT IN STOCK");
+        require(tokenQuantity + currentSupply <= ownerMintBuffer, "NOT ENOUGH LEFT IN STOCK");
 
         for(uint256 i = 1; i <= tokenQuantity; i++) {
             _mint(multiSigWallet, currentSupply + i);
@@ -105,8 +103,9 @@ contract PMVOptimized is PMVMixin, ERC721Optimized, VRFConsumerBase {
     }
 
     function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
-        // transform the result to a number between 1 and maxSupply inclusively
-        uint256 newOffset = (randomness % maxSupply) + 1;
+        // transform the result to a number between 0 and 9,997 inclusively
+        // token 1 and 2 are fixed and are not included for purposes of offsetting
+        uint256 newOffset = (randomness % (maxSupply - 2));
         offset = newOffset;
         offsetRequested = true;
     }
