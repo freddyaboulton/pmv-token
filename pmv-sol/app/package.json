@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@metamask/eth-sig-util": "^4.0.0",
+    "@metaplex-foundation/mpl-token-metadata": "^1.2.5",
     "@project-serum/anchor": "^0.18.0",
     "@solana/spl-token": "^0.1.8",
     "dotenv": "^10.0.0",
