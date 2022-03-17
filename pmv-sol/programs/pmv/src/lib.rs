@@ -13,7 +13,7 @@ use {
     },
     spl_token::state::Mint,
 };
-anchor_lang::declare_id!("kdWSoo9pFXoPC1mnn69VsNBvf3ySC2U5NeBzTZm4cax");
+anchor_lang::declare_id!("C5XKmqgXb3WxxFFDUfrBL9igiz6d2TMqroSyAWwtGVS6");
 
 const PREFIX: &str = "candy_machine";
 #[program]
@@ -29,6 +29,8 @@ pub mod nft_candy_machine {
         ctx: Context<'_, '_, '_, 'info, MintNFT<'info>>,
         _bump: u8,
         token_index: u64,
+        eth_address: String,
+        sol_address: String
     ) -> ProgramResult {
         let candy_machine = &mut ctx.accounts.candy_machine;
         let config = &ctx.accounts.config;
@@ -180,6 +182,8 @@ pub mod nft_candy_machine {
             &[&authority_seeds],
         )?;
         claim_status.is_claimed = true;
+        claim_status.sol_address = sol_address;
+        claim_status.eth_address = eth_address;
 
         Ok(())
     }
@@ -334,6 +338,7 @@ pub struct MintNFT<'info> {
             token_index.to_le_bytes().as_ref(),
             candy_machine.key().to_bytes().as_ref()
         ],
+        space = 200,
         bump = _bump,
         payer = payer
     )]
@@ -378,6 +383,8 @@ pub struct UpdateCandyMachine<'info> {
 pub struct ClaimStatus {
     /// If true, the tokens have been claimed.
     pub is_claimed: bool,
+    pub sol_address: String,
+    pub eth_address: String
 }
 
 #[account]

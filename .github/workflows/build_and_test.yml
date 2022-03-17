@@ -31,7 +31,7 @@ jobs:
       ETH_PMV_ADDRESS: '0x5FbDB2315678afecb367f032d93F642f64180aa3'
       ETH_PROVIDER: http://localhost:8545
       SOL_PROVIDER: https://api.devnet.solana.com/
-      SOL_PMV_ADDRESS: 'kdWSoo9pFXoPC1mnn69VsNBvf3ySC2U5NeBzTZm4cax'
+      SOL_PMV_ADDRESS: 'C5XKmqgXb3WxxFFDUfrBL9igiz6d2TMqroSyAWwtGVS6'
     steps:
       - name: Set up Node 14
         uses: actions/setup-node@v2
@@ -56,6 +56,8 @@ jobs:
       - name: Request SOL 3
         run: /home/runner/.local/share/solana/install/active_release/bin/solana airdrop 2 --url devnet
       - name: Request SOL 4
+        run: /home/runner/.local/share/solana/install/active_release/bin/solana airdrop 2 --url devnet
+      - name: Request SOL 5
         run: /home/runner/.local/share/solana/install/active_release/bin/solana airdrop 2 --url devnet
       - name: Run SOL unit tests
         run: make test-sol

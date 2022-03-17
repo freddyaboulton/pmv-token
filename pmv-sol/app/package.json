@@ -10,7 +10,8 @@
     "dotenv": "^10.0.0",
     "ethers": "^5.5.2",
     "express": "^4.17.1",
-    "express-validator": "^6.13.0"
+    "express-validator": "^6.13.0",
+    "package-lock.json": "^1.0.0"
   },
   "scripts": {
     "run": "env MY_WALLET=$HOME/.config/solana/id.json node -r dotenv/config app.js",
