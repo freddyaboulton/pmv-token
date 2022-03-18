@@ -197,6 +197,13 @@ describe('server-verify', function() {
     expect(tokenNames.includes('PMV 2')).to.be.true;
   });
 
+  it(`Should return empty array for address with no NFTs`,
+      async function() {
+        const solAddress = 'C5XKmqgXb3WxxFFDUfrBL9igiz6d2TMqroSyAWwtGVS6';
+        const res = await axios.get(`http://localhost:3000/ownership/${solAddress}`);
+        expect(res.data.tokens).to.have.lengthOf(0);
+      });
+
   it('Should not verify publicKey1 with privateKey2', async function() {
     const signature = personalSign(
         {privateKey: privateKey2,
