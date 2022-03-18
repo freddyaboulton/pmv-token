@@ -10,7 +10,7 @@ import {MintLayout, Token} from '@solana/spl-token';
 import {AUTHORITY, CONFIG, UUID,
   TOKEN_PROGRAM_ID, TOKEN_METADATA_PROGRAM_ID} from './constants.js';
 import {SystemProgram} from '@solana/web3.js';
-import { Metadata } from '@metaplex-foundation/mpl-token-metadata';
+import {Metadata} from '@metaplex-foundation/mpl-token-metadata';
 
 
 /**
@@ -118,28 +118,30 @@ export async function isClaimed(tokenIndex) {
   }
 }
 
-const createdByOurCandyMachine = (data, candyMachineAddress) => {
+export const createdByOurCandyMachine = (data, candyMachineAddress) => {
   if (data.creators == null) {
     return false;
-  } else if(data.creators.length == 0) {
+  } else if (data.creators.length == 0) {
     return false;
+  } else {
+    return data.creators[0].address === candyMachineAddress;
   }
-  else {
-    return data.creators[0].address == candyMachineAddress;
-  }
-}
+};
 
 /**
  * Get all POMV NFTS owned by an address
  * @param {str} publicKey - Address
- * @return {Array} list of token addresses owned by this address
+ * @return {JSON} list of token addresses owned by this address
  */
 export async function getTokensOfOwner(publicKey) {
-  const allNFTs = await Metadata.findDataByOwner(provider.connection, publicKey);
+  const allNFTs = await Metadata.findDataByOwner(provider.connection,
+      publicKey);
   const [candyMachine] = await getCandyMachine(
-    CONFIG,
-    UUID,
-);
-  // Our candy machine is the first creator
-  return allNFTs.filter(token => createdByOurCandyMachine(token, candyMachine.toString()));
+      CONFIG,
+      UUID,
+  );
+  const candyMachineAddress = candyMachine.toString();
+  // Our candy machine is always the first creator
+  return {'tokens': allNFTs.filter((token) =>
+    createdByOurCandyMachine(token.data, candyMachineAddress))};
 }

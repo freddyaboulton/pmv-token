@@ -2,6 +2,9 @@ import {expect} from 'chai';
 import {verify, makeMessage} from '../verify.js';
 import {personalSign} from '@metamask/eth-sig-util';
 import {isValidEthAddress} from '../validators.js';
+import {createdByOurCandyMachine} from '../claim.js';
+import {Creator,
+  MetadataDataData} from '@metaplex-foundation/mpl-token-metadata';
 
 
 describe('verify', function() {
@@ -43,5 +46,43 @@ describe('verify', function() {
     expect(isValidEthAddress(publicKey1CheckSum)).to.be.true;
     const checkSumAddress = '0x9De6405C0C7512ee94BCB79B860668a52aa7FAd2';
     expect(isValidEthAddress(checkSumAddress)).to.be.true;
+  });
+});
+
+describe('createdByOurCandyMachine', function() {
+  it('properly formatted data - true', function() {
+    const data = new MetadataDataData({name: 'foo',
+      symbol: 'bar',
+      uri: 'example',
+      sellerFeeBasisPoints: 0,
+      creators: [new Creator({address: 'our-candy-machine'}),
+        new Creator({address: 'other-address'})]});
+    expect(createdByOurCandyMachine(data, 'our-candy-machine')).to.be.true;
+  });
+
+  it('properly formatted data - false', function() {
+    const data = new MetadataDataData({name: 'foo',
+      symbol: 'bar',
+      uri: 'example',
+      sellerFeeBasisPoints: 0,
+      creators: [new Creator({address: 'other-address-2'}),
+        new Creator({address: 'other-address'})]});
+    expect(createdByOurCandyMachine(data, 'our-candy-machine')).to.be.false;
+  });
+
+  it('no creators', function() {
+    const data = new MetadataDataData({name: 'foo',
+      symbol: 'bar', uri: 'example',
+      sellerFeeBasisPoints: 0});
+    expect(createdByOurCandyMachine(data, 'our-candy-machine')).to.be.false;
+  });
+
+  it('Creator with no address', function() {
+    const data = new MetadataDataData({name: 'foo',
+      symbol: 'bar', uri: 'example',
+      sellerFeeBasisPoints: 0,
+      creators: [new Creator({verified: true}),
+        new Creator({verified: false})]});
+    expect(createdByOurCandyMachine(data, 'our-candy-machine')).to.be.false;
   });
 });
