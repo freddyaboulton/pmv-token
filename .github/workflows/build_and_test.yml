@@ -46,7 +46,7 @@ jobs:
       - name: Install 
         run: make install
       - name: Install SOL CLI
-        run: sh -c "$(curl -sSfL https://release.solana.com/v1.9.13/install)"
+        run: sh -c "$(curl -sSfL https://release.solana.com/v1.8.14/install)"
       - name: Make a Keypair
         run: /home/runner/.local/share/solana/install/active_release/bin/solana-keygen new
       - name: Request SOL 1

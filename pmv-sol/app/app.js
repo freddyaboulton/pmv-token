@@ -1,6 +1,6 @@
 import express from 'express';
 import {pmv} from './helpers.js';
-import {mintToken, isClaimed} from './claim.js';
+import {mintToken, isClaimed, getTokensOfOwner} from './claim.js';
 import {verify} from './verify.js';
 import {isValidSolAddress, isValidEthAddress} from './validators.js';
 import {body, validationResult, param} from 'express-validator';
@@ -78,6 +78,17 @@ app.post('/claim',
       }
 
       res.status(status).json(response);
+    });
+
+app.get('/ownership/:solAddress',
+    param('solAddress').custom(isValidSolAddress),
+    async function(req, res) {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(422).json({errors: errors.array()});
+      }
+      const ownedTokens = await getTokensOfOwner(req.params.solAddress);
+      res.status(200).json(ownedTokens);
     });
 
 app.listen(port, () => {

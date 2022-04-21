@@ -174,6 +174,36 @@ describe('server-verify', function() {
     expect(verifiedRes.data.solAddress).to.equal(solAddress);
   });
 
+  it(`Should correctly get tokens owned by
+    9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9`,
+  async function() {
+    const solAddress = '9TfBbdv2WjSvYeootcv77mcsv9Rp8dG2peP4iFJWk8V9';
+    const res = await axios.get(`http://localhost:3000/ownership/${solAddress}`);
+    const tokenNames = res.data.tokens.map((t) => t.data.name);
+    expect(tokenNames.length).to.equal(4);
+    expect(tokenNames.includes('PMV 21')).to.be.true;
+    expect(tokenNames.includes('PMV 7')).to.be.true;
+    expect(tokenNames.includes('PMV 12')).to.be.true;
+    expect(tokenNames.includes('PMV 13')).to.be.true;
+  });
+
+  it(`Should correctly get tokens owned by
+  5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5`,
+  async function() {
+    const solAddress = '5Vi79ysmRBFe6dnfHmErH6VJnWQXeWZio7JKaHQWkmH5';
+    const res = await axios.get(`http://localhost:3000/ownership/${solAddress}`);
+    const tokenNames = res.data.tokens.map((t) => t.data.name);
+    expect(tokenNames.length).to.equal(1);
+    expect(tokenNames.includes('PMV 2')).to.be.true;
+  });
+
+  it(`Should return empty array for address with no NFTs`,
+      async function() {
+        const solAddress = 'C5XKmqgXb3WxxFFDUfrBL9igiz6d2TMqroSyAWwtGVS6';
+        const res = await axios.get(`http://localhost:3000/ownership/${solAddress}`);
+        expect(res.data.tokens).to.have.lengthOf(0);
+      });
+
   it('Should not verify publicKey1 with privateKey2', async function() {
     const signature = personalSign(
         {privateKey: privateKey2,
@@ -410,4 +440,13 @@ describe('server-verify', function() {
         expect(res.data.ethAddress).to.equal('');
         expect(res.data.solAddress).to.equal('');
       });
+
+  it('Should not verify invalid solAddress ownership', async function() {
+    const address = '0x5faaf2315678afecb367f032d93f642f64180aa3';
+    const res = await axios.get(
+        `http://localhost:3000/ownership/${address}`);
+    expect(res.status).to.equal(422);
+    expect(res.data.errors.length).to.equal(1);
+    expect(res.data.errors[0].msg).to.equal('Invalid Sol Address');
+  });
 });
