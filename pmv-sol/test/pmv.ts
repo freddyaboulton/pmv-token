@@ -222,6 +222,10 @@ describe("nft-candy-machine", function () {
       );
 
       try {
+        const rent = await provider.connection.getMinimumBalanceForRentExemption(
+          configArrayStart + 4 + 4 + 2
+        );
+        console.log(rent);
         const tx = await program.rpc.initializeCandyMachine(
           bump,
           {
@@ -244,10 +248,7 @@ describe("nft-candy-machine", function () {
                 fromPubkey: myWallet.publicKey,
                 newAccountPubkey: config.publicKey,
                 space: configArrayStart + 4 + 4 + 2,
-                lamports:
-                  await provider.connection.getMinimumBalanceForRentExemption(
-                    configArrayStart + 4 + 4 + 2
-                  ),
+                lamports: rent,
                 programId: programId,
               }),
               anchor.web3.SystemProgram.transfer({
