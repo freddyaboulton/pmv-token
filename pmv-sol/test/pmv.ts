@@ -106,7 +106,7 @@ describe("nft-candy-machine", function () {
 
   // Address of the deployed program.
   const programId = new anchor.web3.PublicKey(
-    "C5XKmqgXb3WxxFFDUfrBL9igiz6d2TMqroSyAWwtGVS6"
+    "GoM4aT4mj3E5WZSA7SUBc3UPamxQLCnFXggNtBUw791K"
   );
 
   const walletWrapper = new anchor.Wallet(myWallet);
@@ -260,6 +260,76 @@ describe("nft-candy-machine", function () {
             ],
           }
         );
+
+        const mint = anchor.web3.Keypair.generate();
+        const token = await getTokenWallet(
+          myWallet.publicKey,
+          mint.publicKey
+        );
+        const metadata = await getMetadata(mint.publicKey);
+        const masterEdition = await getMasterEdition(mint.publicKey);
+        this.collectionNFT = mint.publicKey;
+        const collectiontx = await program.rpc.createCollectionNft(
+          {
+            accounts: {
+              config: this.config.publicKey,
+              candyMachine: candyMachine,
+              payer: this.authority.publicKey,
+              wallet: myWallet.publicKey,
+              mint: mint.publicKey,
+              metadata: metadata,
+              masterEdition: masterEdition,
+              mintAuthority: myWallet.publicKey,
+              updateAuthority: myWallet.publicKey,
+              tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+              tokenProgram: TOKEN_PROGRAM_ID,
+              systemProgram: SystemProgram.programId,
+              rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+              clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+            },
+            signers: [mint, this.authority],
+            instructions: [
+              // Give authority enough to pay off the cost of the nft!
+              // it'll be funnneled right back
+              anchor.web3.SystemProgram.transfer({
+                fromPubkey: myWallet.publicKey,
+                toPubkey: this.authority.publicKey,
+                lamports: 1000000000 + 10000000, // add minting fees in there
+              }),
+              anchor.web3.SystemProgram.createAccount({
+                fromPubkey: myWallet.publicKey,
+                newAccountPubkey: mint.publicKey,
+                space: MintLayout.span,
+                lamports:
+                  await provider.connection.getMinimumBalanceForRentExemption(
+                    MintLayout.span
+                  ),
+                programId: TOKEN_PROGRAM_ID,
+              }),
+              Token.createInitMintInstruction(
+                TOKEN_PROGRAM_ID,
+                mint.publicKey,
+                0,
+                myWallet.publicKey,
+                myWallet.publicKey
+              ),
+              createAssociatedTokenAccountInstruction(
+                token,
+                myWallet.publicKey,
+                myWallet.publicKey,
+                mint.publicKey
+              ),
+              Token.createMintToInstruction(
+                TOKEN_PROGRAM_ID,
+                mint.publicKey,
+                token,
+                myWallet.publicKey,
+                [],
+                1
+              ),
+            ],
+          });
+       
       } catch (e) {
         console.log(e);
         throw e;
@@ -283,6 +353,7 @@ describe("nft-candy-machine", function () {
       console.log(machine.data.price)
       assert.equal(machine.bump, bump);
       assert.equal(machine.tokenMint, null);
+      assert.equal(machine.collection, this.collectionNFT);
     });
 
     it("mints 2x to account not authority", async function () {

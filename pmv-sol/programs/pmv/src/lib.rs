@@ -7,13 +7,14 @@ use {
         Discriminator, Key,
     },
     anchor_spl::token::Token,
-    metaplex_token_metadata::{
-        instruction::{create_master_edition, create_metadata_accounts, update_metadata_accounts},
-        state::{MAX_CREATOR_LEN, MAX_CREATOR_LIMIT, MAX_SYMBOL_LENGTH},
+    mpl_token_metadata::{
+        instruction::{create_master_edition_v3, create_metadata_accounts_v2, update_metadata_accounts,
+                      verify_collection},
+        state::{MAX_CREATOR_LEN, MAX_CREATOR_LIMIT, MAX_SYMBOL_LENGTH, Collection},
     },
     spl_token::state::Mint,
 };
-anchor_lang::declare_id!("C5XKmqgXb3WxxFFDUfrBL9igiz6d2TMqroSyAWwtGVS6");
+anchor_lang::declare_id!("GoM4aT4mj3E5WZSA7SUBc3UPamxQLCnFXggNtBUw791K");
 
 const PREFIX: &str = "candy_machine";
 #[program]
@@ -94,8 +95,8 @@ pub mod nft_candy_machine {
             &[candy_machine.bump],
         ];
 
-        let creators: Vec<metaplex_token_metadata::state::Creator> =
-            vec![metaplex_token_metadata::state::Creator {
+        let creators: Vec<mpl_token_metadata::state::Creator> =
+            vec![mpl_token_metadata::state::Creator {
                 address: candy_machine.key(),
                 verified: true,
                 share: 100,
@@ -125,8 +126,13 @@ pub mod nft_candy_machine {
             ctx.accounts.rent.to_account_info(),
             candy_machine.to_account_info(),
         ];
+        let collection = match candy_machine.collection {
+            Some(pubkey) => Some(Collection {verified: false, key: pubkey}),
+            _ => None
+        };
+
         invoke_signed(
-            &create_metadata_accounts(
+            &create_metadata_accounts_v2(
                 *ctx.accounts.token_metadata_program.key,
                 *ctx.accounts.metadata.key,
                 *ctx.accounts.mint.key,
@@ -140,12 +146,14 @@ pub mod nft_candy_machine {
                 0,
                 true,
                 config.data.is_mutable,
+                collection, // set collection here
+                None
             ),
             metadata_infos.as_slice(),
             &[&authority_seeds],
         )?;
         invoke_signed(
-            &create_master_edition(
+            &create_master_edition_v3(
                 *ctx.accounts.token_metadata_program.key,
                 *ctx.accounts.master_edition.key,
                 *ctx.accounts.mint.key,
@@ -181,6 +189,11 @@ pub mod nft_candy_machine {
             ],
             &[&authority_seeds],
         )?;
+        verify_collection(*ctx.accounts.token_metadata_program.key,
+            metadata=Pubkey, collection_authority=*candy_machine.key(),
+            payer=*ctx.accounts.payer.key,
+            collection_mint=*candy_machine.collection,
+            collection: Pubkey, collection_master_edition_account: Pubkey, collection_authority_record: Option<Pubkey>)
         claim_status.is_claimed = true;
         claim_status.sol_address = sol_address;
         claim_status.eth_address = eth_address;
@@ -248,6 +261,114 @@ pub mod nft_candy_machine {
 
             candy_machine.token_mint = Some(*token_mint_info.key);
         }
+
+        Ok(())
+    }
+
+    pub fn create_collection_nft<'info>(
+        ctx: Context<'_, '_, '_, 'info, CreateCollectionNFT<'info>>
+    ) -> ProgramResult {
+        let candy_machine = &mut ctx.accounts.candy_machine;
+        let config = &ctx.accounts.config;
+
+        let config_key = config.key();
+        let authority_seeds = [
+            PREFIX.as_bytes(),
+            config_key.as_ref(),
+            candy_machine.data.uuid.as_bytes(),
+            &[candy_machine.bump],
+        ];
+
+        let creators: Vec<mpl_token_metadata::state::Creator> =
+            vec![mpl_token_metadata::state::Creator {
+                address: candy_machine.key(),
+                verified: true,
+                share: 100,
+            }];
+
+        let metadata_infos = vec![
+            ctx.accounts.metadata.to_account_info(),
+            ctx.accounts.mint.to_account_info(),
+            ctx.accounts.mint_authority.to_account_info(),
+            ctx.accounts.payer.to_account_info(),
+            ctx.accounts.token_metadata_program.to_account_info(),
+            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+            ctx.accounts.rent.to_account_info(),
+            candy_machine.to_account_info(),
+        ];
+
+        let master_edition_infos = vec![
+            ctx.accounts.master_edition.to_account_info(),
+            ctx.accounts.mint.to_account_info(),
+            ctx.accounts.mint_authority.to_account_info(),
+            ctx.accounts.payer.to_account_info(),
+            ctx.accounts.metadata.to_account_info(),
+            ctx.accounts.token_metadata_program.to_account_info(),
+            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+            ctx.accounts.rent.to_account_info(),
+            candy_machine.to_account_info(),
+        ];
+        invoke_signed(
+            &create_metadata_accounts_v2(
+                *ctx.accounts.token_metadata_program.key,
+                *ctx.accounts.metadata.key,
+                *ctx.accounts.mint.key,
+                *ctx.accounts.mint_authority.key,
+                *ctx.accounts.payer.key,
+                candy_machine.key(),
+                "Collection NFT".to_string(),
+                config.data.symbol.clone(),
+                " ".to_string(),
+                Some(creators),
+                0,
+                true,
+                false,
+                None,
+                None
+            ),
+            metadata_infos.as_slice(),
+            &[&authority_seeds],
+        )?;
+        invoke_signed(
+            &create_master_edition_v3(
+                *ctx.accounts.token_metadata_program.key,
+                *ctx.accounts.master_edition.key,
+                *ctx.accounts.mint.key,
+                candy_machine.key(),
+                *ctx.accounts.mint_authority.key,
+                *ctx.accounts.metadata.key,
+                *ctx.accounts.payer.key,
+                //max supply
+                Some(0),
+            ),
+            master_edition_infos.as_slice(),
+            &[&authority_seeds],
+        )?;
+
+        let mut new_update_authority = Some(candy_machine.authority);
+
+        if !ctx.accounts.config.data.retain_authority {
+            new_update_authority = Some(ctx.accounts.update_authority.key());
+        }
+        invoke_signed(
+            &update_metadata_accounts(
+                *ctx.accounts.token_metadata_program.key,
+                *ctx.accounts.metadata.key,
+                candy_machine.key(),
+                new_update_authority,
+                None,
+                Some(true),
+            ),
+            &[
+                ctx.accounts.token_metadata_program.to_account_info(),
+                ctx.accounts.metadata.to_account_info(),
+                candy_machine.to_account_info(),
+            ],
+            &[&authority_seeds],
+        )?;
+        candy_machine.collection = Some(*ctx.accounts.mint.key);
 
         Ok(())
     }
@@ -357,7 +478,40 @@ pub struct MintNFT<'info> {
     update_authority: Signer<'info>,
     #[account(mut)]
     master_edition: UncheckedAccount<'info>,
-    #[account(address = metaplex_token_metadata::id())]
+    #[account(address = mpl_token_metadata::id())]
+    token_metadata_program: UncheckedAccount<'info>,
+    token_program: Program<'info, Token>,
+    system_program: Program<'info, System>,
+    rent: Sysvar<'info, Rent>,
+    clock: Sysvar<'info, Clock>,
+}
+
+#[derive(Accounts)]
+pub struct CreateCollectionNFT<'info> {
+    config: Account<'info, Config>,
+    #[account(
+        mut,
+        has_one = config,
+        has_one = wallet,
+        seeds = [PREFIX.as_bytes(), config.key().as_ref(), candy_machine.data.uuid.as_bytes()],
+        bump = candy_machine.bump,
+    )]
+    candy_machine: Account<'info, CandyMachine>,
+    #[account(mut)]
+    payer: Signer<'info>,
+    #[account(mut)]
+    wallet: UncheckedAccount<'info>,
+    // With the following accounts we aren't using anchor macros because they are CPI'd
+    // through to token-metadata which will do all the validations we need on them.
+    #[account(mut)]
+    metadata: UncheckedAccount<'info>,
+    #[account(mut)]
+    mint: UncheckedAccount<'info>,
+    mint_authority: Signer<'info>,
+    update_authority: Signer<'info>,
+    #[account(mut)]
+    master_edition: UncheckedAccount<'info>,
+    #[account(address = mpl_token_metadata::id())]
     token_metadata_program: UncheckedAccount<'info>,
     token_program: Program<'info, Token>,
     system_program: Program<'info, System>,
@@ -393,6 +547,7 @@ pub struct CandyMachine {
     pub authority: Pubkey,
     pub wallet: Pubkey,
     pub token_mint: Option<Pubkey>,
+    pub collection: Option<Pubkey>,
     pub config: Pubkey,
     pub data: CandyMachineData,
     pub items_redeemed: u64,
