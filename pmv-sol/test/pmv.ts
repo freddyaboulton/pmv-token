@@ -254,7 +254,7 @@ describe("nft-candy-machine", function () {
               anchor.web3.SystemProgram.transfer({
                 fromPubkey: myWallet.publicKey,
                 toPubkey: this.authority.publicKey,
-                lamports: 500,
+                lamports: 990880.0, // rent exempt
               }),
               txInstr,
             ],
